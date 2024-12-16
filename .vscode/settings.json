@@ -1,0 +1,15 @@
+{
+    "files.associations": {
+        "drvsys.h": "c",
+        "global.h": "c",
+        "hldrvrfm23.h": "c",
+        "hldrvvl53l0x.h": "c",
+        "drvspi.h": "c",
+        "fsysclk.h": "c",
+        "io.h": "c",
+        "sfr_defs.h": "c",
+        "iom328p.h": "c",
+        "drvtwi.h": "c"
+    },
+    "editor.detectIndentation": false
+}

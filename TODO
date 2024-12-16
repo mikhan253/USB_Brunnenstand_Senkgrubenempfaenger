@@ -1,0 +1,16 @@
+- Frequenz reduzieren während I2C + IDLE Sleep
+
+- Frequenz reduzieren bei SPI + IDLE Sleep
+
+
+
+--> ABLAUF
+
+1. Batteriespannung Messen ->BATVOL
+2. Enable TOF
+3. 10x Messen mittelwert   ->DISTANCE
+4. Disable TOF
+5. Enable RFM23
+6. Temperatur auslesen     ->TEMP
+7. Transmit Data 10x
+8. Done

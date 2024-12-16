@@ -7,6 +7,43 @@
 #include "DrvTWI.h"
 #include "millis.h"
 #include "HlDrvVL53L0X.h"
+#include <avr/pgmspace.h>
+
+const uint8_t HlDrvVL53L0X_InitData[] PROGMEM = {
+    /*Addr  Data */
+#define HLDRVVL53L0X_BLOB_DEFAULT_TUNING_SETTINGS 0,80
+    0xFF, 0x01, 0x00, 0x00, 0xFF, 0x00, 0x09, 0x00,
+    0x10, 0x00, 0x11, 0x00, 0x24, 0x01, 0x25, 0xFF,
+    0x75, 0x00, 0xFF, 0x01, 0x4E, 0x2C, 0x48, 0x00,
+    0x30, 0x20, 0xFF, 0x00, 0x30, 0x09, 0x54, 0x00,
+    0x31, 0x04, 0x32, 0x03, 0x40, 0x83, 0x46, 0x25,
+    0x60, 0x00, 0x27, 0x00, 0x50, 0x06, 0x51, 0x00,
+    0x52, 0x96, 0x56, 0x08, 0x57, 0x30, 0x61, 0x00,
+    0x62, 0x00, 0x64, 0x00, 0x65, 0x00, 0x66, 0xA0,
+    0xFF, 0x01, 0x22, 0x32, 0x47, 0x14, 0x49, 0xFF,
+    0x4A, 0x00, 0xFF, 0x00, 0x7A, 0x0A, 0x7B, 0x00,
+    0x78, 0x21, 0xFF, 0x01, 0x23, 0x34, 0x42, 0x00,
+    0x44, 0xFF, 0x45, 0x26, 0x46, 0x05, 0x40, 0x40,
+    0x0E, 0x06, 0x20, 0x1A, 0x43, 0x40, 0xFF, 0x00,
+    0x34, 0x03, 0x35, 0x44, 0xFF, 0x01, 0x31, 0x04,
+    0x4B, 0x09, 0x4C, 0x05, 0x4D, 0x04, 0xFF, 0x00,
+    0x44, 0x00, 0x45, 0x20, 0x47, 0x08, 0x48, 0x28,
+    0x67, 0x00, 0x70, 0x04, 0x71, 0x01, 0x72, 0xFE,
+    0x76, 0x00, 0x77, 0x00, 0xFF, 0x01, 0x0D, 0x01,
+    0xFF, 0x00, 0x80, 0x01, 0x01, 0xF8, 0xFF, 0x01,
+    0x8E, 0x01, 0x00, 0x01, 0xFF, 0x00, 0x80, 0x00,
+#define HLDRVVL53L0X_BLOB_DATA_INIT 160,4
+    0x88, 0x00, 0x80, 0x01, 0xFF, 0x01, 0x00, 0x00,
+#define HLDRVVL53L0X_BLOB_DATA_INIT2 164,3
+    0x00, 0x01, 0xFF, 0x00, 0x80, 0x00,
+#define HLDRVVL53L0X_BLOB_SET_REFERENCE_SPADS 170,5
+    0xFF, 0x01, 0x4F, 0x00, 0x4E, 0x2C, 0xFF, 0x00,
+    0xB6, 0xB4,                                    
+#define HLDRVVL53L0X_BLOB_x 206,
+
+};
+
+
 
 //---------------------------------------------------------
 // Local variables within this file (private)
@@ -21,19 +58,32 @@ uint32_t g_measTimBudUs;
 //---------------------------------------------------------
 // Locally used functions (private)
 //---------------------------------------------------------
-bool getSpadInfo(uint8_t *count, bool *type_is_aperture);
+uint8_t getSpadInfo(uint8_t *count, uint8_t *type_is_aperture);
 void getSequenceStepEnables(SequenceStepEnables * enables);
 void getSequenceStepTimeouts(SequenceStepEnables const * enables, SequenceStepTimeouts * timeouts);
-bool performSingleRefCalibration(uint8_t vhv_init_byte);
+uint8_t performSingleRefCalibration(uint8_t vhv_init_byte);
 static uint16_t decodeTimeout(uint16_t value);
 static uint16_t encodeTimeout(uint16_t timeout_mclks);
 static uint32_t timeoutMclksToMicroseconds(uint16_t timeout_period_mclks, uint8_t vcsel_period_pclks);
 static uint32_t timeoutMicrosecondsToMclks(uint32_t timeout_period_us, uint8_t vcsel_period_pclks);
 
+
+uint8_t buffer[3];
 //---------------------------------------------------------
 // I2C communication Functions
 //---------------------------------------------------------
 // Write an 8-bit register
+
+void _HlDrvVL53L0X_bulkwrite(uint8_t start, uint8_t count)
+{
+    while (count--)
+    {
+        buffer[0] = pgm_read_byte(&HlDrvVL53L0X_InitData[start++]);
+        buffer[1] = pgm_read_byte(&HlDrvVL53L0X_InitData[start++]);
+        writeReg(buffer[0], buffer[1]);
+    }
+}
+
 void writeReg(uint8_t reg, uint8_t value) {
   i2c_start( g_i2cAddr | I2C_WRITE );
   i2c_write(reg);
@@ -146,26 +196,12 @@ uint8_t getAddress() {
 // enough unless a cover glass is added.
 // If io_2v8 (optional) is true or not given, the sensor is configured for 2V8
 // mode.
-bool initVL53L0X( bool io_2v8 ){
+uint8_t initVL53L0X( uint8_t io_2v8 ){
   // VL53L0X_DataInit() begin
 
-  // sensor uses 1V8 mode for I/O by default; switch to 2V8 mode if necessary
-  if (io_2v8)
-  {
-    writeReg(VHV_CONFIG_PAD_SCL_SDA__EXTSUP_HV,
-      readReg(VHV_CONFIG_PAD_SCL_SDA__EXTSUP_HV) | 0x01); // set bit 0
-  }
-
-  // "Set I2C standard mode"
-  writeReg(0x88, 0x00);
-
-  writeReg(0x80, 0x01);
-  writeReg(0xFF, 0x01);
-  writeReg(0x00, 0x00);
+_HlDrvVL53L0X_bulkwrite(HLDRVVL53L0X_BLOB_DATA_INIT);
   g_stopVariable = readReg(0x91);
-  writeReg(0x00, 0x01);
-  writeReg(0xFF, 0x00);
-  writeReg(0x80, 0x00);
+_HlDrvVL53L0X_bulkwrite(HLDRVVL53L0X_BLOB_DATA_INIT2);
 
   // disable SIGNAL_RATE_MSRC (bit 1) and SIGNAL_RATE_PRE_RANGE (bit 4) limit checks
   writeReg(MSRC_CONFIG_CONTROL, readReg(MSRC_CONFIG_CONTROL) | 0x12);
@@ -180,7 +216,7 @@ bool initVL53L0X( bool io_2v8 ){
   // VL53L0X_StaticInit() begin
 
   uint8_t spad_count;
-  bool spad_type_is_aperture;
+  uint8_t spad_type_is_aperture;
   if (!getSpadInfo(&spad_count, &spad_type_is_aperture)) { return false; }
 
   // The SPAD map (RefGoodSpadMap) is read by VL53L0X_get_info_from_device() in
@@ -190,12 +226,7 @@ bool initVL53L0X( bool io_2v8 ){
   readMulti(GLOBAL_CONFIG_SPAD_ENABLES_REF_0, ref_spad_map, 6);
 
   // -- VL53L0X_set_reference_spads() begin (assume NVM values are valid)
-
-  writeReg(0xFF, 0x01);
-  writeReg(DYNAMIC_SPAD_REF_EN_START_OFFSET, 0x00);
-  writeReg(DYNAMIC_SPAD_NUM_REQUESTED_REF_SPAD, 0x2C);
-  writeReg(0xFF, 0x00);
-  writeReg(GLOBAL_CONFIG_REF_EN_START_SELECT, 0xB4);
+_HlDrvVL53L0X_bulkwrite(HLDRVVL53L0X_BLOB_SET_REFERENCE_SPADS);
 
   uint8_t first_spad_to_enable = spad_type_is_aperture ? 12 : 0; // 12 is the first aperture spad
   uint8_t spads_enabled = 0;
@@ -221,99 +252,7 @@ bool initVL53L0X( bool io_2v8 ){
   // -- VL53L0X_load_tuning_settings() begin
   // DefaultTuningSettings from vl53l0x_tuning.h
 
-  writeReg(0xFF, 0x01);
-  writeReg(0x00, 0x00);
-
-  writeReg(0xFF, 0x00);
-  writeReg(0x09, 0x00);
-  writeReg(0x10, 0x00);
-  writeReg(0x11, 0x00);
-
-  writeReg(0x24, 0x01);
-  writeReg(0x25, 0xFF);
-  writeReg(0x75, 0x00);
-
-  writeReg(0xFF, 0x01);
-  writeReg(0x4E, 0x2C);
-  writeReg(0x48, 0x00);
-  writeReg(0x30, 0x20);
-
-  writeReg(0xFF, 0x00);
-  writeReg(0x30, 0x09);
-  writeReg(0x54, 0x00);
-  writeReg(0x31, 0x04);
-  writeReg(0x32, 0x03);
-  writeReg(0x40, 0x83);
-  writeReg(0x46, 0x25);
-  writeReg(0x60, 0x00);
-  writeReg(0x27, 0x00);
-  writeReg(0x50, 0x06);
-  writeReg(0x51, 0x00);
-  writeReg(0x52, 0x96);
-  writeReg(0x56, 0x08);
-  writeReg(0x57, 0x30);
-  writeReg(0x61, 0x00);
-  writeReg(0x62, 0x00);
-  writeReg(0x64, 0x00);
-  writeReg(0x65, 0x00);
-  writeReg(0x66, 0xA0);
-
-  writeReg(0xFF, 0x01);
-  writeReg(0x22, 0x32);
-  writeReg(0x47, 0x14);
-  writeReg(0x49, 0xFF);
-  writeReg(0x4A, 0x00);
-
-  writeReg(0xFF, 0x00);
-  writeReg(0x7A, 0x0A);
-  writeReg(0x7B, 0x00);
-  writeReg(0x78, 0x21);
-
-  writeReg(0xFF, 0x01);
-  writeReg(0x23, 0x34);
-  writeReg(0x42, 0x00);
-  writeReg(0x44, 0xFF);
-  writeReg(0x45, 0x26);
-  writeReg(0x46, 0x05);
-  writeReg(0x40, 0x40);
-  writeReg(0x0E, 0x06);
-  writeReg(0x20, 0x1A);
-  writeReg(0x43, 0x40);
-
-  writeReg(0xFF, 0x00);
-  writeReg(0x34, 0x03);
-  writeReg(0x35, 0x44);
-
-  writeReg(0xFF, 0x01);
-  writeReg(0x31, 0x04);
-  writeReg(0x4B, 0x09);
-  writeReg(0x4C, 0x05);
-  writeReg(0x4D, 0x04);
-
-  writeReg(0xFF, 0x00);
-  writeReg(0x44, 0x00);
-  writeReg(0x45, 0x20);
-  writeReg(0x47, 0x08);
-  writeReg(0x48, 0x28);
-  writeReg(0x67, 0x00);
-  writeReg(0x70, 0x04);
-  writeReg(0x71, 0x01);
-  writeReg(0x72, 0xFE);
-  writeReg(0x76, 0x00);
-  writeReg(0x77, 0x00);
-
-  writeReg(0xFF, 0x01);
-  writeReg(0x0D, 0x01);
-
-  writeReg(0xFF, 0x00);
-  writeReg(0x80, 0x01);
-  writeReg(0x01, 0xF8);
-
-  writeReg(0xFF, 0x01);
-  writeReg(0x8E, 0x01);
-  writeReg(0x00, 0x01);
-  writeReg(0xFF, 0x00);
-  writeReg(0x80, 0x00);
+_HlDrvVL53L0X_bulkwrite(HLDRVVL53L0X_BLOB_DEFAULT_TUNING_SETTINGS);
 
   // -- VL53L0X_load_tuning_settings() end
 
@@ -374,7 +313,7 @@ bool initVL53L0X( bool io_2v8 ){
 // seems to increase the likelihood of getting an inaccurate reading because of
 // unwanted reflections from objects other than the intended target.
 // Defaults to 0.25 MCPS as initialized by the ST API and this library.
-bool setSignalRateLimit(float limit_Mcps)
+uint8_t setSignalRateLimit(float limit_Mcps)
 {
   if (limit_Mcps < 0 || limit_Mcps > 511.99) { return false; }
 
@@ -396,7 +335,7 @@ float getSignalRateLimit(void)
 // factor of N decreases the range measurement standard deviation by a factor of
 // sqrt(N). Defaults to about 33 milliseconds; the minimum is 20 ms.
 // based on VL53L0X_set_measurement_timing_budget_micro_seconds()
-bool setMeasurementTimingBudget(uint32_t budget_us)
+uint8_t setMeasurementTimingBudget(uint32_t budget_us)
 {
   SequenceStepEnables enables;
   SequenceStepTimeouts timeouts;
@@ -539,7 +478,7 @@ uint32_t getMeasurementTimingBudget(void)
 //  pre:  12 to 18 (initialized default: 14)
 //  final: 8 to 14 (initialized default: 10)
 // based on VL53L0X_set_vcsel_pulse_period()
-bool setVcselPulsePeriod(vcselPeriodType type, uint8_t period_pclks)
+uint8_t setVcselPulsePeriod(vcselPeriodType type, uint8_t period_pclks)
 {
   uint8_t vcsel_period_reg = encodeVcselPeriod(period_pclks);
 
@@ -853,9 +792,9 @@ uint16_t readRangeSingleMillimeters( statInfo_t *extraStats ) {
 
 // Did a timeout occur in one of the read functions since the last call to
 // timeoutOccurred()?
-bool timeoutOccurred()
+uint8_t timeoutOccurred()
 {
-  bool tmp = g_isTimeout;
+  uint8_t tmp = g_isTimeout;
   g_isTimeout = false;
   return tmp;
 }
@@ -873,10 +812,9 @@ uint16_t getTimeout(void){
 // Get reference SPAD (single photon avalanche diode) count and type
 // based on VL53L0X_get_info_from_device(),
 // but only gets reference SPAD count and type
-bool getSpadInfo(uint8_t * count, bool * type_is_aperture)
+uint8_t getSpadInfo(uint8_t * count, uint8_t * type_is_aperture)
 {
   uint8_t tmp;
-
   writeReg(0x80, 0x01);
   writeReg(0xFF, 0x01);
   writeReg(0x00, 0x00);
@@ -1017,7 +955,7 @@ uint32_t timeoutMicrosecondsToMclks(uint32_t timeout_period_us, uint8_t vcsel_pe
 
 
 // based on VL53L0X_perform_single_ref_calibration()
-bool performSingleRefCalibration(uint8_t vhv_init_byte)
+uint8_t performSingleRefCalibration(uint8_t vhv_init_byte)
 {
   writeReg(SYSRANGE_START, 0x01 | vhv_init_byte); // VL53L0X_REG_SYSRANGE_MODE_START_STOP
 

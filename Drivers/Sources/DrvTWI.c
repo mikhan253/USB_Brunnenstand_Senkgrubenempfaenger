@@ -211,7 +211,7 @@ uint8_t DrvTWI_ReadAck(void){
  
  Return:  byte read from I2C device
 *************************************************************************/
-uint8_t DrvTWI_ReadAck(void){
+uint8_t DrvTWI_ReadNAck(void){
 	uint16_t timeout=0xFFFF;
 	TWCR = (1<<TWINT) | (1<<TWEN);
 	while( --timeout > 0 ){

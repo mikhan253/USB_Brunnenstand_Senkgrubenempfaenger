@@ -117,7 +117,7 @@ uint8_t _HlDrvVL53L0X_ReadReg(uint8_t reg) {
   DrvTWI_Start( g_i2cAddr | I2C_WRITE );
   DrvTWI_Write( reg );
   DrvTWI_RepeatedStart( g_i2cAddr | I2C_READ );
-  value = DrvTWI_ReadAck();
+  value = DrvTWI_ReadNAck();
   DrvTWI_Stop();
   return value;
 }
@@ -129,7 +129,7 @@ uint16_t _HlDrvVL53L0X_ReadReg16Bit(uint8_t reg) {
   DrvTWI_Write( reg );
   DrvTWI_RepeatedStart( g_i2cAddr | I2C_READ );
   value  = DrvTWI_ReadAck() << 8;
-  value |= DrvTWI_ReadAck();
+  value |= DrvTWI_ReadNAck();
   DrvTWI_Stop();
   return value;
 }
@@ -143,7 +143,7 @@ uint32_t _HlDrvVL53L0X_ReadReg32Bit(uint8_t reg) {
   value  = (uint32_t)DrvTWI_ReadAck() <<24;
   value |= (uint32_t)DrvTWI_ReadAck() <<16;
   value |= (uint32_t)DrvTWI_ReadAck() << 8;
-  value |= DrvTWI_ReadAck();
+  value |= DrvTWI_ReadNAck();
   DrvTWI_Stop();
   return value;
 }
@@ -169,7 +169,7 @@ void _HlDrvVL53L0X_ReadMulti(uint8_t reg, uint8_t * dst, uint8_t count) {
     if ( count > 1 ){
       *dst++ = DrvTWI_ReadAck();
     } else {
-      *dst++ = DrvTWI_ReadAck();
+      *dst++ = DrvTWI_ReadNAck();
     }
     count--;
   }

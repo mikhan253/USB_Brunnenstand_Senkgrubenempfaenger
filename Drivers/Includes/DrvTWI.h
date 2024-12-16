@@ -83,7 +83,7 @@ extern uint8_t DrvTWI_ReadAck(void);
  @brief    read one byte from the I2C device, read is followed by a stop condition 
  @return   byte read from I2C device
  */
-extern uint8_t DrvTWI_ReadAck(void);
+extern uint8_t DrvTWI_ReadNAck(void);
 
 /** 
  @brief    read one byte from the I2C device

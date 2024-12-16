@@ -16,7 +16,7 @@
 /*************************************************************************
  Initialization of the I2C bus interface. Need to be called only once
 *************************************************************************/
-void i2c_init(void){
+void DrvTWI_Init(void){
     DrvPWR_ModuleEnable(PRR_TWI);
 
   /* initialize TWI clock: 100 kHz clock, TWPS = 0 => prescaler = 1 */
@@ -29,7 +29,7 @@ void i2c_init(void){
   Issues a start condition and sends address and transfer direction.
   return 0 = device accessible, 1= failed to access device
 *************************************************************************/
-uint8_t i2c_start(uint8_t address){
+uint8_t DrvTWI_Start(uint8_t address){
     uint8_t   twst;
     uint16_t timeout=0xFFFF;
 
@@ -81,7 +81,7 @@ uint8_t i2c_start(uint8_t address){
  If device is busy, use ack polling to wait until device is ready
  Input:   address and transfer direction of I2C device
 *************************************************************************/
-void i2c_start_wait(uint8_t address){
+void DrvTWI_StartWait(uint8_t address){
     uint8_t   twst;
     while ( 1 ) {
 	    // send START condition
@@ -128,8 +128,8 @@ void i2c_start_wait(uint8_t address){
  Return:  0 device accessible
           1 failed to access device
 *************************************************************************/
-uint8_t i2c_rep_start(uint8_t address){
-    return i2c_start( address );
+uint8_t DrvTWI_RepeatedStart(uint8_t address){
+    return DrvTWI_Start( address );
 
 }/* i2c_rep_start */
 
@@ -137,7 +137,7 @@ uint8_t i2c_rep_start(uint8_t address){
 /*************************************************************************
  Terminates the data transfer and releases the I2C bus
 *************************************************************************/
-void i2c_stop(void){
+void DrvTWI_Stop(void){
     uint16_t timeout=0xFFFF;
     /* send stop condition */
 	TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWSTO);
@@ -158,7 +158,7 @@ void i2c_stop(void){
   Return:   0 write successful 
             1 write failed
 *************************************************************************/
-uint8_t i2c_write( uint8_t data ){
+uint8_t DrvTWI_Write( uint8_t data ){
     uint8_t   twst;
     uint16_t timeout=0xFFFF;
 	// send data to the previously addressed device
@@ -193,7 +193,7 @@ uint8_t i2c_write( uint8_t data ){
  
  Return:  byte read from I2C device
 *************************************************************************/
-uint8_t i2c_readAck(void){
+uint8_t DrvTWI_ReadAck(void){
 	uint16_t timeout=0xFFFF;
 	TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWEA);
 	while( --timeout > 0 ){
@@ -211,7 +211,7 @@ uint8_t i2c_readAck(void){
  
  Return:  byte read from I2C device
 *************************************************************************/
-uint8_t i2c_readNak(void){
+uint8_t DrvTWI_ReadAck(void){
 	uint16_t timeout=0xFFFF;
 	TWCR = (1<<TWINT) | (1<<TWEN);
 	while( --timeout > 0 ){
@@ -222,17 +222,3 @@ uint8_t i2c_readNak(void){
     // debug_str("i2c_readNak(): timeout\n");
 	return 0;
 }/* i2c_readNak */
-
-// Print out all the active I2C addresses on the bus
-void searchI2C(){
-	uint8_t devAdr;
-	// debug_str("Discovered I2C addresses: ");
-	for( devAdr=0; devAdr<=127; devAdr++ ){
-		if( !i2c_start( (devAdr<<1) | I2C_WRITE ) ){
-			// debug_hex(devAdr, 2);
-            // debug_putc(' ');
-		}
-		i2c_stop();                             // set stop conditon = release bus
-	}
-	// debug_str("done\n");
-}

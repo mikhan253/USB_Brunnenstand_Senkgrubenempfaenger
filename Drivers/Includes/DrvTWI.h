@@ -23,7 +23,7 @@
  @param  void
  @return none
  */
-extern void i2c_init(void);
+extern void DrvTWI_Init(void);
 
 
 /** 
@@ -31,7 +31,7 @@ extern void i2c_init(void);
  @param void
  @return none
  */
-extern void i2c_stop(void);
+extern void DrvTWI_Stop(void);
 
 
 /** 
@@ -41,7 +41,7 @@ extern void i2c_stop(void);
  @retval   0   device accessible 
  @retval   1   failed to access device 
  */
-extern uint8_t i2c_start(uint8_t addr);
+extern uint8_t DrvTWI_Start(uint8_t addr);
 
 
 /**
@@ -51,7 +51,7 @@ extern uint8_t i2c_start(uint8_t addr);
  @retval  0 device accessible
  @retval  1 failed to access device
  */
-extern uint8_t i2c_rep_start(uint8_t addr);
+extern uint8_t DrvTWI_RepeatedStart(uint8_t addr);
 
 
 /**
@@ -61,7 +61,7 @@ extern uint8_t i2c_rep_start(uint8_t addr);
  @param    addr address and transfer direction of I2C device
  @return   none
  */
-extern void i2c_start_wait(uint8_t addr);
+extern void DrvTWI_StartWait(uint8_t addr);
 
  
 /**
@@ -70,20 +70,20 @@ extern void i2c_start_wait(uint8_t addr);
  @retval   0 write successful
  @retval   1 write failed
  */
-extern uint8_t i2c_write(uint8_t data);
+extern uint8_t DrvTWI_Write(uint8_t data);
 
 
 /**
  @brief    read one byte from the I2C device, request more data from device 
  @return   byte read from I2C device
  */
-extern uint8_t i2c_readAck(void);
+extern uint8_t DrvTWI_ReadAck(void);
 
 /**
  @brief    read one byte from the I2C device, read is followed by a stop condition 
  @return   byte read from I2C device
  */
-extern uint8_t i2c_readNak(void);
+extern uint8_t DrvTWI_ReadAck(void);
 
 /** 
  @brief    read one byte from the I2C device

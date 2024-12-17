@@ -70,13 +70,9 @@ uint16_t result[3];
         for(i=0;i<3;i++)
             result[i] = 0;
         HlDrvGPIO_VL53L0X_Enable();
-        //DrvTWI_Init(2);
-        DrvTWI_Init(32);
-        
+        DrvTWI_Init(2);
         _delay_ms(2);
-        //btmp = 0x80 | (2 & 0xf); // Master Clock Divider
-        //CLKPR = 0x80;
-        //CLKPR = btmp;
+        DrvPWR_SetMCLKDiv(2); //8Mhz
         HlDrvVL53L0X_Init();
         HlDrvVL53L0X_SetSignalRateLimit(0.1);
         HlDrvVL53L0X_SetVcselPulsePeriod(VcselPeriodPreRange, 18);
@@ -85,9 +81,7 @@ uint16_t result[3];
         for(i=0;i<3;i++)
             result[i] = HlDrvVL53L0X_ReadRangeSingleMillimeters(&xTraStats);
         HlDrvGPIO_VL53L0X_Disable();
-        btmp = 0x80 | (0 & 0xf); // Master Clock Divider
-        CLKPR = 0x80;
-        CLKPR = btmp;
+        DrvPWR_SetMCLKDiv(0); //32Mhz
         for(i=0;i<3;i++)
             printf("val:%i ",result[i]);
         printf("\r\n");

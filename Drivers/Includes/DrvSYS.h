@@ -70,6 +70,7 @@
 /*****************************************************************************
  *  Makros                                                                   *
  *****************************************************************************/
+#define DrvPWR_SetMCLKDiv(div) CLKPR = 0x80;CLKPR = 0x80 | (div & 0xf);
 #define DrvPWR_ModuleEnable(ID) PRR10 &= ~ID
 #define DrvPWR_ModuleDisable(ID) PRR10 |= ID
 #define DrvGPIO_SetPin(BANK, NR) PORT##BANK |= _BV(NR)
@@ -105,9 +106,7 @@ static inline void DrvSYS_Init()
     PMCR = 0x80;
     PMCR = btmp;*/
 
-    btmp = 0x80 | (INIT_MCK_CLKDIV & 0xf); // Master Clock Divider
-    CLKPR = 0x80;
-    CLKPR = btmp;
+    DrvPWR_SetMCLKDiv(INIT_MCK_CLKDIV);
 
     // Ports definieren
     DDRB = INIT_DDRB;

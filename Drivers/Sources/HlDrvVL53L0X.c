@@ -779,8 +779,8 @@ uint16_t HlDrvVL53L0X_ReadRangeSingleMillimeters( statInfo_t *extraStats ) {
   _HlDrvVL53L0X_WriteReg(0x80, 0x00);
   _HlDrvVL53L0X_WriteReg(SYSRANGE_START, 0x01);
   // "Wait until start bit has been cleared"
-  while (_HlDrvVL53L0X_ReadReg(SYSRANGE_START) & 0x01){
-  }
+  //while (_HlDrvVL53L0X_ReadReg(SYSRANGE_START) & 0x01){
+  //}
   return HlDrvVL53L0X_ReadRangeContinuousMillimeters( extraStats );
 }
 

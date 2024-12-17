@@ -8,6 +8,7 @@
 #include <avr/pgmspace.h>
 #include "DrvSYS.h"
 #include "DrvSPI.h"
+#include <util/delay.h>
 #include "HlDrvRFM23.h"
 #if DEBUG
     #include <stdio.h>
@@ -58,8 +59,6 @@ uint8_t HlDrvRFM23_DataBuffer[RFM23_PACKETLENGTH];
 
 uint8_t HlDrvRFM23_Enable(void)
 {
-    printf("sleep...");
-    DrvSYS_ClearPin(B,PB1); /* Shutdown RFM23 entfernen */
     while((PIND & _BV(PD3))) //HIER DEN INTERRUPT EINFÜGEN UND SCHLAFEN
         asm volatile ("nop");
     if(HlDrvRFM23_Read(0x04) != 0x01) //Kein POR??
@@ -73,8 +72,8 @@ uint8_t HlDrvRFM23_Enable(void)
             DrvSPI_transferByte(pgm_read_byte(&HlDrvRFM23_InitData[dataptr++])); //Daten
         DrvSPI_SSOFF();
     }
-#if DEBUG
-    DrvMISC_Delayms(1000); //DEBUG
+#ifdef LLDEBUG
+    _delay_ms(1000); //DEBUG
     printf("Register DUMP after INIT:\n"); //DEBUG
     rfm23_temp(); //DEBUG
 #endif
@@ -108,7 +107,7 @@ uint8_t HlDrvRFM23_TransmitData(void) {
 #if DEBUG
 uint8_t rfm23_temp()
 {
-    u8 i, max=0x7F,x;
+    uint8_t i, max=0x7F,x;
 	for (i=0; i<=max; i++)
     {
         x=HlDrvRFM23_Read(i);

@@ -6,6 +6,7 @@
 #include "DrvUSART.h"
 #include "DrvADC.h"
 #include "DrvTWI.h"
+#include "DrvSPI.h"
 #include "HlDrvVL53L0X.h"
 
 #ifdef DEBUG
@@ -88,6 +89,18 @@ uint16_t result[3];
             printf("val:%i ",result[i]);
         printf("\r\n");
         _delay_ms(100);
+     
+     printf("Funkmodul ");
+     DrvSPI_Init();
+     HlDrvGPIO_RFM23_Enable();
+      if(HlDrvRFM23_Enable())
+    	printf("RFM23: Init Failed\n");
+     else
+    	printf("RFM23: Init OK\n");       
+
+    DrvSPI_Deinit();
+     HlDrvGPIO_RFM23_Disable();
+
         _delay_ms(100);
         _delay_ms(100);
         _delay_ms(100);

@@ -10,12 +10,6 @@
 // OR over the last bit correctly based on reads and writes
 #define ADDRESS_DEFAULT 0b01010010
 
-// Record the current time to check an upcoming timeout against
-#define startTimeout() (g_timeoutStartMs = millis())
-
-// Check if timeout is enabled (set to nonzero value) and has expired
-#define checkTimeoutExpired() (g_ioTimeout > 0 && ((uint16_t)millis() - g_timeoutStartMs) > g_ioTimeout)
-
 // Decode VCSEL (vertical cavity surface emitting laser) pulse period in PCLKs
 // from register value
 // based on VL53L0X_decode_vcsel_period()
@@ -134,7 +128,7 @@ typedef struct{
 void setAddress(uint8_t new_addr);
 // Returns the current I²C address.
 uint8_t getAddress(void);
-
+void HlDrvVL53L0X_Deinit();
 // Iniitializes and configures the sensor. 
 // If the optional argument io_2v8 is 1, the sensor is configured for 2V8 mode (2.8 V I/O); 
 // if 0, the sensor is left in 1V8 mode. Returns 1 if the initialization completed successfully.
@@ -191,19 +185,10 @@ uint16_t HlDrvVL53L0X_ReadRangeContinuousMillimeters( statInfo_t *extraStats );
 // Additional measurement data will be copied into `extraStats` if it is non-zero.
 uint16_t HlDrvVL53L0X_ReadRangeSingleMillimeters( statInfo_t *extraStats );
 
-// Sets a timeout period in milliseconds after which read operations will abort 
-// if the sensor is not ready. A value of 0 disables the timeout.
-void setTimeout(uint16_t timeout);
-
-// Returns the current timeout period setting.
-uint16_t getTimeout(void);
-
-// Indicates whether a read timeout has occurred since the last call to timeoutOccurred().
-uint8_t timeoutOccurred(void);
-
 //---------------------------------------------------------
 // I2C communication Functions
 //---------------------------------------------------------
+void _HlDrvVL53L0X_WaitForInt();
 void _HlDrvVL53L0X_WriteReg(uint8_t reg, uint8_t value);        // Write an 8-bit register
 void _HlDrvVL53L0X_WriteReg16Bit(uint8_t reg, uint16_t value);  // Write a 16-bit register
 void _HlDrvVL53L0X_WriteReg32Bit(uint8_t reg, uint32_t value);  // Write a 32-bit register

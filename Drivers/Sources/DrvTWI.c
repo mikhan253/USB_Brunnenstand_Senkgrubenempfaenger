@@ -11,7 +11,8 @@
 // #include "debugPrint.h"
 #include "DrvTWI.h"
 #include "DrvSYS.h"
-
+#include <avr/interrupt.h>
+#include <avr/sleep.h>
 
 /*************************************************************************
  Initialization of the I2C bus interface. Need to be called only once
@@ -22,9 +23,16 @@ void DrvTWI_Init(uint8_t twbrset){
   /* initialize TWI clock: 100 kHz clock, TWPS = 0 => prescaler = 1 */
   TWSR = 0;                         /* no prescaler */
   TWBR=twbrset;
+  set_sleep_mode(SLEEP_MODE_IDLE);
+  sei();
   //TWBR = ((F_CPU/SCL_CLOCK)-16)/2;  /* must be > 10 for stable operation */
 }/* i2c_init */
 
+void DrvTWI_Deinit(){
+    cli();
+    TWCR = 0;
+    DrvPWR_ModuleDisable(PRR_TWI);
+}/* i2c_init */
 
 /*************************************************************************	
   Issues a start condition and sends address and transfer direction.
@@ -32,41 +40,22 @@ void DrvTWI_Init(uint8_t twbrset){
 *************************************************************************/
 uint8_t DrvTWI_Start(uint8_t address){
     uint8_t   twst;
-    uint16_t timeout=0xFFFF;
 
 	// send START condition
-	TWCR = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN);
+	TWCR = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN) | (1<<TWIE);
 
 	// wait until  START condition has been transmitted
-    while( --timeout > 0 ){
-        if( TWCR & (1<<TWINT) ){
-            break;
-        }
-    }
-    if( timeout == 0 ){
-        // debug_str("i2c_start(): timeout\n");
-        return 1;
-    }
-    timeout=0xFFFF;
-
+    do sleep_mode(); while (!(TWCR & (1<<TWINT)));
+    
 	// check value of TWI Status Register. Mask prescaler bits.
 	twst = TW_STATUS & 0xF8;
 	if ( (twst != TW_START) && (twst != TW_REP_START)) return 1;
 
 	// send device address
 	TWDR = address;
-	TWCR = (1<<TWINT) | (1<<TWEN);
-
+	TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWIE);
 	// wail until transmission completed and ACK/NACK has been received
-    while( --timeout > 0 ){
-        if( TWCR & (1<<TWINT) ){
-            break;
-        }
-    }
-    if( timeout == 0 ){
-        // debug_str("i2c_start(): timeout\n");
-        return 1;
-    }
+    do sleep_mode(); while (!(TWCR & (1<<TWINT)));
 	// check value of TWI Status Register. Mask prescaler bits.
 	twst = TW_STATUS & 0xF8;
 	if ( (twst != TW_MT_SLA_ACK) && (twst != TW_MR_SLA_ACK) ){
@@ -86,10 +75,10 @@ void DrvTWI_StartWait(uint8_t address){
     uint8_t   twst;
     while ( 1 ) {
 	    // send START condition
-	    TWCR = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN);
+	    TWCR = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN) | (1<<TWIE);
     
     	// wait until transmission completed
-    	while(!(TWCR & (1<<TWINT)));
+    	do sleep_mode(); while (!(TWCR & (1<<TWINT)));
     
     	// check value of TWI Status Register. Mask prescaler bits.
     	twst = TW_STATUS & 0xF8;
@@ -97,10 +86,10 @@ void DrvTWI_StartWait(uint8_t address){
     
     	// send device address
     	TWDR = address;
-    	TWCR = (1<<TWINT) | (1<<TWEN);
+    	TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWIE);
     
     	// wail until transmission completed
-    	while(!(TWCR & (1<<TWINT)));
+    	do sleep_mode(); while (!(TWCR & (1<<TWINT)));
     
     	// check value of TWI Status Register. Mask prescaler bits.
     	twst = TW_STATUS & 0xF8;
@@ -139,11 +128,11 @@ uint8_t DrvTWI_RepeatedStart(uint8_t address){
  Terminates the data transfer and releases the I2C bus
 *************************************************************************/
 void DrvTWI_Stop(void){
-    uint16_t timeout=0xFFFF;
     /* send stop condition */
 	TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWSTO);
 	// wait until stop condition is executed and bus released
-    while( --timeout > 0 ){
+    
+    while( 1 ){
         if( !(TWCR&(1<<TWSTO)) ){
             return;
         }
@@ -161,22 +150,13 @@ void DrvTWI_Stop(void){
 *************************************************************************/
 uint8_t DrvTWI_Write( uint8_t data ){
     uint8_t   twst;
-    uint16_t timeout=0xFFFF;
 	// send data to the previously addressed device
 	TWDR = data;
-	TWCR = (1<<TWINT) | (1<<TWEN);
+	TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWIE);
 
 	// wait until transmission completed
     // wait until  START condition has been transmitted
-    while( --timeout > 0 ){
-        if( TWCR & (1<<TWINT) ){
-            break;
-        }
-    }
-    if( timeout == 0 ){
-        // debug_str("i2c_write(): timeout\n");
-        return 1;
-    }
+    do sleep_mode(); while (!(TWCR & (1<<TWINT)));
 
 	// check value of TWI Status Register. Mask prescaler bits
 	twst = TW_STATUS & 0xF8;
@@ -195,15 +175,9 @@ uint8_t DrvTWI_Write( uint8_t data ){
  Return:  byte read from I2C device
 *************************************************************************/
 uint8_t DrvTWI_ReadAck(void){
-	uint16_t timeout=0xFFFF;
-	TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWEA);
-	while( --timeout > 0 ){
-		if( TWCR & (1<<TWINT) ){
-		    return TWDR;
-		}
-	}
-    // debug_str("i2c_readAck(): timeout\n");
-    return 0;
+	TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWEA) | (1<<TWIE);
+    do sleep_mode(); while (!(TWCR & (1<<TWINT)));
+    return TWDR;
 }/* i2c_readAck */
 
 
@@ -213,13 +187,12 @@ uint8_t DrvTWI_ReadAck(void){
  Return:  byte read from I2C device
 *************************************************************************/
 uint8_t DrvTWI_ReadNAck(void){
-	uint16_t timeout=0xFFFF;
-	TWCR = (1<<TWINT) | (1<<TWEN);
-	while( --timeout > 0 ){
-		if( TWCR & (1<<TWINT) ){
-			return TWDR;
-		}
-	}
-    // debug_str("i2c_readNak(): timeout\n");
-	return 0;
+	TWCR = (1<<TWINT) | (1<<TWEN)|(1<<TWIE);
+    do sleep_mode(); while (!(TWCR & (1<<TWINT)));
+    return TWDR;
 }/* i2c_readNak */
+
+ISR(TWI_vect)
+{
+    return;
+}

@@ -4,10 +4,13 @@
 // VL53L0X datasheet.
 
 #include <stdint.h>
+#include <DrvSYS.h>
 #include "DrvTWI.h"
 #include "millis.h"
 #include "HlDrvVL53L0X.h"
 #include <avr/pgmspace.h>
+#include <avr/interrupt.h>
+#include <avr/sleep.h>
 #include <stdio.h>
 const uint8_t HlDrvVL53L0X_InitData[] PROGMEM = {
     /*Addr  Data */
@@ -177,6 +180,14 @@ void _HlDrvVL53L0X_ReadMulti(uint8_t reg, uint8_t * dst, uint8_t count) {
 
 // Public Methods //////////////////////////////////////////////////////////////
 
+void HlDrvVL53L0X_Deinit(){
+    PCICR = 0;
+    PCMSK2 = 0; 
+    cli();
+    DrvPWR_ModuleDisable(PRR_PCI);
+
+}
+
 // Initialize sensor using sequence based on VL53L0X_DataInit(),
 // VL53L0X_StaticInit(), and VL53L0X_PerformRefCalibration().
 // This function does not perform reference SPAD calibration
@@ -187,6 +198,12 @@ void _HlDrvVL53L0X_ReadMulti(uint8_t reg, uint8_t * dst, uint8_t count) {
 // mode.
 uint8_t HlDrvVL53L0X_Init(){
   // VL53L0X_DataInit() begin
+
+  //PCINT auf PD4
+    DrvPWR_ModuleEnable(PRR_PCI);
+    PCICR = (1<<PCIE2);
+    PCMSK2 = (1<<PCINT20); 
+    sei();
 
 _HlDrvVL53L0X_BulkWrite(HLDRVVL53L0X_BLOB_DATA_INIT);
   g_stopVariable = _HlDrvVL53L0X_ReadReg(0x91);
@@ -719,14 +736,7 @@ void HlDrvVL53L0X_StopContinuous(void)
 uint16_t HlDrvVL53L0X_ReadRangeContinuousMillimeters( statInfo_t *extraStats ) {
   uint8_t tempBuffer[12];
   uint16_t temp;
-  startTimeout();
-  while ((_HlDrvVL53L0X_ReadReg(RESULT_INTERRUPT_STATUS) & 0x07) == 0) {
-    if (checkTimeoutExpired())
-    {
-      g_isTimeout = 1;
-      return 65535;
-    }
-  }
+  _HlDrvVL53L0X_WaitForInt();
   if( extraStats == 0 ){
     // assumptions: Linearity Corrective Gain is 1000 (default);
     // fractional ranging is not enabled
@@ -769,32 +779,11 @@ uint16_t HlDrvVL53L0X_ReadRangeSingleMillimeters( statInfo_t *extraStats ) {
   _HlDrvVL53L0X_WriteReg(0x80, 0x00);
   _HlDrvVL53L0X_WriteReg(SYSRANGE_START, 0x01);
   // "Wait until start bit has been cleared"
-  startTimeout();
   while (_HlDrvVL53L0X_ReadReg(SYSRANGE_START) & 0x01){
-    if (checkTimeoutExpired()){
-      g_isTimeout = 1;
-      return 65535;
-    }
   }
   return HlDrvVL53L0X_ReadRangeContinuousMillimeters( extraStats );
 }
 
-// Did a timeout occur in one of the read functions since the last call to
-// timeoutOccurred()?
-uint8_t timeoutOccurred()
-{
-  uint8_t tmp = g_isTimeout;
-  g_isTimeout = 0;
-  return tmp;
-}
-
-void setTimeout(uint16_t timeout){
-  g_ioTimeout = timeout;
-}
-
-uint16_t getTimeout(void){
-  return g_ioTimeout;
-}
 
 // Private Methods /////////////////////////////////////////////////////////////
 
@@ -804,15 +793,12 @@ uint16_t getTimeout(void){
 uint8_t _HlDrvVL53L0X_GetSPADInfo(uint8_t * count, uint8_t * type_is_aperture)
 {
   uint8_t tmp;
-  //GETSPADINFOA
     _HlDrvVL53L0X_BulkWrite(HLDRVVL53L0X_BLOB_GET_SPAD_INFO_A);
     //0x80, 0x01, 0xFF, 0x01, 0x00, 0x00, 0xFF, 0x06,
   _HlDrvVL53L0X_WriteReg(0x83, _HlDrvVL53L0X_ReadReg(0x83) | 0x04);
     _HlDrvVL53L0X_BulkWrite(HLDRVVL53L0X_BLOB_GET_SPAD_INFO_B);
-  startTimeout();
   while (_HlDrvVL53L0X_ReadReg(0x83) == 0x00)
   {
-    if (checkTimeoutExpired()) { return 0; }
   }
   _HlDrvVL53L0X_WriteReg(0x83, 0x01);
   tmp = _HlDrvVL53L0X_ReadReg(0x92);
@@ -935,16 +921,20 @@ uint32_t _HlDrvVL53L0X_TimeoutMicrosecondsToMclks(uint32_t timeout_period_us, ui
 uint8_t _HlDrvVL53L0X_PerformSingleRefCalibration(uint8_t vhv_init_byte)
 {
   _HlDrvVL53L0X_WriteReg(SYSRANGE_START, 0x01 | vhv_init_byte); // VL53L0X_REG_SYSRANGE_MODE_START_STOP
-
-  startTimeout();
-  while ((_HlDrvVL53L0X_ReadReg(RESULT_INTERRUPT_STATUS) & 0x07) == 0)
-  {
-    if (checkTimeoutExpired()) { return 0; }
-  }
-
+_HlDrvVL53L0X_WaitForInt();
   _HlDrvVL53L0X_WriteReg(SYSTEM_INTERRUPT_CLEAR, 0x01);
 
   _HlDrvVL53L0X_WriteReg(SYSRANGE_START, 0x00);
 
   return 1;
+}
+#include <avr/cpufunc.h> 
+void _HlDrvVL53L0X_WaitForInt() {
+  do sleep_mode(); while ((_HlDrvVL53L0X_ReadReg(RESULT_INTERRUPT_STATUS) & 0x07) == 0);
+  //while(PIND & _BV(4))
+  //  _NOP();
+}
+
+ISR (PCINT2_vect){ 
+    return;
 }

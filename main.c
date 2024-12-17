@@ -80,6 +80,8 @@ uint16_t result[3];
         HlDrvVL53L0X_SetMeasurementTimingBudget(500 * 1000UL);
         for(i=0;i<3;i++)
             result[i] = HlDrvVL53L0X_ReadRangeSingleMillimeters(&xTraStats);
+        HlDrvVL53L0X_Deinit();
+        DrvTWI_Deinit();
         HlDrvGPIO_VL53L0X_Disable();
         DrvPWR_SetMCLKDiv(0); //32Mhz
         for(i=0;i<3;i++)

@@ -25,6 +25,7 @@
  */
 extern void DrvTWI_Init(uint8_t twbrset);
 
+extern void DrvTWI_Deinit();
 
 /** 
  @brief Terminates the data transfer and releases the I2C bus 

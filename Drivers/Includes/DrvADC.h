@@ -66,7 +66,7 @@ static inline void DrvADC_Deinit()
 /**
     @brief    Lese Wert von ADC
     Lese Wert von ADC auf aktuellem Kanal
-    @param    
+    @param
     @return   ADC Wert
  **/
 uint16_t DrvADC_ReadData();

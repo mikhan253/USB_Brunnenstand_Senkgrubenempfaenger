@@ -70,7 +70,9 @@
 /*****************************************************************************
  *  Makros                                                                   *
  *****************************************************************************/
-#define DrvPWR_SetMCLKDiv(div) CLKPR = 0x80;CLKPR = 0x80 | (div & 0xf);
+#define DrvPWR_SetMCLKDiv(div) \
+    CLKPR = 0x80;              \
+    CLKPR = 0x80 | (div & 0xf);
 #define DrvPWR_ModuleEnable(ID) PRR10 &= ~ID
 #define DrvPWR_ModuleDisable(ID) PRR10 |= ID
 #define DrvGPIO_SetPin(BANK, NR) PORT##BANK |= _BV(NR)

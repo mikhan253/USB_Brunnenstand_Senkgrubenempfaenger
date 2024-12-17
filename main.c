@@ -19,29 +19,13 @@ static int uart_putchar(char c, FILE *stream)
 }
 static FILE mystdout = FDEV_SETUP_STREAM(uart_putchar, NULL, _FDEV_SETUP_WRITE);
 
-void printports()
-{
-    uint8_t a, b, c;
-    a = PORTB;
-    b = DDRB;
-    c = PINB;
-    printf("PORTB=%02X DDR=%02X PIN=%02X\r\n", a, b, c);
-    a = PORTC;
-    b = DDRC;
-    c = PINC;
-    printf("PORTC=%02X DDR=%02X PIN=%02X\r\n", a, b, c);
-    a = PORTD;
-    b = DDRD;
-    c = PIND;
-    printf("PORTD=%02X DDR=%02X PIN=%02X\r\n", a, b, c);
-}
 int main(void)
 {
-            statInfo_t xTraStats;
+    statInfo_t xTraStats;
     stdout = &mystdout;
     uint8_t i = 10;
     uint16_t adcval;
-uint16_t result[3];
+    uint16_t result[3];
     uint8_t btmp;
     DrvSYS_Init();
 #ifdef DEBUG
@@ -68,37 +52,37 @@ uint16_t result[3];
         printf("%u\r\n", adcval);
 
         printf("Abstandssensor ");
-        for(i=0;i<3;i++)
+        for (i = 0; i < 3; i++)
             result[i] = 0;
         HlDrvGPIO_VL53L0X_Enable();
         DrvTWI_Init(2);
         _delay_ms(2);
-        DrvPWR_SetMCLKDiv(2); //8Mhz
+        DrvPWR_SetMCLKDiv(2); // 8Mhz
         HlDrvVL53L0X_Init();
         HlDrvVL53L0X_SetSignalRateLimit(0.1);
         HlDrvVL53L0X_SetVcselPulsePeriod(VcselPeriodPreRange, 18);
         HlDrvVL53L0X_SetVcselPulsePeriod(VcselPeriodFinalRange, 14);
         HlDrvVL53L0X_SetMeasurementTimingBudget(500 * 1000UL);
-        for(i=0;i<3;i++)
+        for (i = 0; i < 3; i++)
             result[i] = HlDrvVL53L0X_ReadRangeSingleMillimeters(&xTraStats);
         HlDrvVL53L0X_Deinit();
         DrvTWI_Deinit();
         HlDrvGPIO_VL53L0X_Disable();
-        DrvPWR_SetMCLKDiv(0); //32Mhz
-        for(i=0;i<3;i++)
-            printf("val:%i ",result[i]);
+        DrvPWR_SetMCLKDiv(0); // 32Mhz
+        for (i = 0; i < 3; i++)
+            printf("val:%i ", result[i]);
         printf("\r\n");
         _delay_ms(100);
-     
-     printf("Funkmodul ");
-     DrvSPI_Init();
-      if(HlDrvRFM23_Enable())
-    	printf("RFM23: Init Failed\n");
-     else
-    	printf("RFM23: Init OK\n");       
 
-    DrvSPI_Deinit();
-     HlDrvGPIO_RFM23_Disable();
+        printf("Funkmodul ");
+        DrvSPI_Init();
+        if (HlDrvRFM23_Enable())
+            printf("RFM23: Init Failed\n");
+        else
+            printf("RFM23: Init OK\n");
+
+        DrvSPI_Deinit();
+        HlDrvGPIO_RFM23_Disable();
 
         _delay_ms(100);
         _delay_ms(100);
@@ -111,7 +95,6 @@ uint16_t result[3];
                 HlDrvGPIO_PowerOff();
             break;
         default:*/
-        
     }
 
     // Device initialization

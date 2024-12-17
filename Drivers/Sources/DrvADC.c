@@ -49,8 +49,8 @@ uint16_t _adcRead()
 {
     uint16_t wtmp;
 
-    //ADCSRA |= 0x40; Geht automatisch in den Startmodus
-    //do
+    // ADCSRA |= 0x40; Geht automatisch in den Startmodus
+    // do
     //{
     sleep_mode();
     //} while ((ADCSRA & 0x40) != 0x00);

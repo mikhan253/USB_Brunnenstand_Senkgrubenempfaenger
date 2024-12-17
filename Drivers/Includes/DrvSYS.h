@@ -98,16 +98,6 @@
  **/
 static inline void DrvSYS_Init()
 {
-    uint8_t btmp;
-    // 32MHz RC;
-    /*btmp = PMCR | 1;
-    PMCR = 0x80;
-    PMCR = btmp;
-
-    btmp = (PMCR & 0x9f) | ((0 & 0x3) << 5);
-    PMCR = 0x80;
-    PMCR = btmp;*/
-
     DrvPWR_SetMCLKDiv(INIT_MCK_CLKDIV);
 
     // Ports definieren
@@ -128,52 +118,6 @@ static inline void DrvSYS_Init()
     DrvPWR_ModuleEnable(PRR_USART0);
 #endif
 
-#if (GPIO_EXINT0EN | GPIO_EXINT1EN | ARG_PCIBEN | ARG_PCICEN | ARG_PCIDEN | ARG_PCIEEN | ARG_PCIFEN)
-    uint8_t u8Tmp;
-    u8Tmp = SREG;
-    CLI();
-#endif
-#if (GPIO_EXINT0EN | GPIO_EXINT1EN)
-    /** Store SREG, & disable globall interupt */
-
-    /** Set Interrupt Sense */
-    EICRA = (GPIO_EXINT0ISC << ISC00) | (GPIO_EXINT1ISC << ISC10);
-    /** Set Interrupt Enable */
-    EIMSK = (GPIO_EXINT0EN << INT0) | (GPIO_EXINT1EN << INT1);
-    /** Clear interupt flag */
-    EIFR = (GPIO_EXINT0EN << INT0) | (GPIO_EXINT1EN << INT1);
-#endif
-#if (ARG_PCIBEN | ARG_PCICEN | ARG_PCIDEN | ARG_PCIEEN | ARG_PCIFEN)
-    /** Store SREG & disable global interrupt */
-    u8Tmp = SREG;
-    CLI();
-    /** Set PIN Change Interrupt Mask */
-#if ARG_PCIBEN
-    PCMSK0 = ARG_PCIBMSK;
-#endif
-#if ARG_PCICEN
-    PCMSK1 = ARG_PCICMSK;
-#endif
-#if ARG_PCIDEN
-    PCMSK2 = ARG_PCIDMSK;
-#endif
-#if ARG_PCIEEN
-    PCMSK3 = ARG_PCIEMSK;
-#endif
-#if ARG_PCIFEN
-    PCMSK3 = ARG_PCIFMSK;
-#endif
-    /** Set PIN Change Interrupt Enable */
-    PCICR = (ARG_PCIBEN << PCIE0) | (ARG_PCICEN << PCIE1) |
-            (ARG_PCIDEN << PCIE2) | (ARG_PCIEEN << PCIE3) | (ARG_PCIFEN << PCIE4);
-    /** Clear Interrupt Flag */
-    PCIFR = (ARG_PCIBEN << PCIE0) | (ARG_PCICEN << PCIE1) |
-            (ARG_PCIDEN << PCIE2) | (ARG_PCIEEN << PCIE3) | (ARG_PCIFEN << PCIE4);
-#endif
-#if (GPIO_EXINT0EN | GPIO_EXINT1EN | ARG_PCIBEN | ARG_PCICEN | ARG_PCIDEN | ARG_PCIEEN | ARG_PCIFEN)
-    /** Restore SREG */
-    SREG = u8Tmp;
-#endif
 }
 
 #endif

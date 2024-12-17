@@ -21,8 +21,8 @@ const uint8_t HlDrvRFM23_InitData[] PROGMEM = {
     5, 0x05, 0x06, 0x00,          // 05h-06h Interrupt Enable --> Packet Sent, Valid Packet Received
     0x01, 0x00,                   // Operating Mode --> Enable READY Mode
     0x7f,                         // 30 MHz Crystal Oscillator Load Capacitance (ODER EVTL D7 laut APPNOTE)
-    2, 0x0b, 0xf5,                // GPIO0 RX State
-    0xf2,                         // GPIO1 TX State
+    2, 0x0b, 0xf2,                // GPIO0 RX State
+    0xf5,                         // GPIO1 TX State
     3, 0x1c, 0x04,                // IF Filter Bandwidth
     0x40,                         // AFC Loop Gearshift Override --> AFC Enable
     0x08,                         // AFC Timing Control
@@ -61,6 +61,9 @@ uint8_t HlDrvRFM23_DataBuffer[RFM23_PACKETLENGTH];
 
 uint8_t HlDrvRFM23_Enable(void)
 {
+    uint8_t dataptr = 0;
+    uint8_t count;
+
     DrvPWR_ModuleEnable(PRR_PCI);
     PCICR = (1 << PCIE2);
     PCMSK2 = (1 << PCINT19);
@@ -70,12 +73,8 @@ uint8_t HlDrvRFM23_Enable(void)
     do
         sleep_mode();
     while ((PIND & _BV(PD3)));
-    // while((PIND & _BV(PD3))) //HIER DEN INTERRUPT EINFÜGEN UND SCHLAFEN
-    //     asm volatile ("nop");
     if (HlDrvRFM23_Read(0x04) != 0x01) // Kein POR??
         return -1;
-    uint8_t dataptr = 0;
-    uint8_t count = 0;
     while ((count = pgm_read_byte(&HlDrvRFM23_InitData[dataptr++])))
     { // count>0
         DrvSPI_SSON();
@@ -84,10 +83,6 @@ uint8_t HlDrvRFM23_Enable(void)
             DrvSPI_transferByte(pgm_read_byte(&HlDrvRFM23_InitData[dataptr++])); // Daten
         DrvSPI_SSOFF();
     }
-    asm volatile("nop");
-    _delay_ms(10); // AUS IRGEND EINEM GRUND MUSS DAS DRINNEN SEIN???
-    //    printf("Register DUMP after INIT:\n"); //DEBUG
-    //    rfm23_temp(); //DEBUG
     return 0;
 }
 
@@ -96,8 +91,9 @@ uint8_t HlDrvRFM23_ReceiveData(void)
     HlDrvRFM23_Write(0x08, 0x03); // Clear FIFO
     HlDrvRFM23_Write(0x08, 0x00);
     HlDrvRFM23_Write(0x07, 0x05); // RX Mode
-    while ((PIND & _BV(PD3)))     // HIER DEN INTERRUPT EINFÜGEN UND SCHLAFEN
-        asm volatile("nop");
+    do
+        sleep_mode();
+    while ((PIND & _BV(PD3)));
     if (HlDrvRFM23_Read(0x03) != 0x02) // Valid Packet Received
         return -1;
     HlDrvRFM23_MultipleTransaction(0, RFM23_PACKETLENGTH, 0x7F, HlDrvRFM23_DataBuffer);
@@ -110,8 +106,9 @@ uint8_t HlDrvRFM23_TransmitData(void)
     HlDrvRFM23_Write(0x08, 0x00);
     HlDrvRFM23_Write(0x07, 0x09); // TX Mode
     HlDrvRFM23_MultipleTransaction(1, RFM23_PACKETLENGTH, 0x7F, HlDrvRFM23_DataBuffer);
-    while ((PIND & _BV(PD3))) // HIER DEN INTERRUPT EINFÜGEN UND SCHLAFEN
-        asm volatile("nop");
+    do
+        sleep_mode();
+    while ((PIND & _BV(PD3)));
     if (HlDrvRFM23_Read(0x03) != 0x24) // Valid Sent Interrupt
         return -1;
     return 0;

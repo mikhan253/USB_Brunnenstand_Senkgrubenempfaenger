@@ -8,6 +8,7 @@
 #include "DrvTWI.h"
 #include "DrvSPI.h"
 #include "HlDrvVL53L0X.h"
+#include "HlDrvRFM23.h"
 
 #ifdef DEBUG
 #include <stdio.h> //nur zum debuggen
@@ -24,8 +25,8 @@ int main(void)
     statInfo_t xTraStats;
     stdout = &mystdout;
     uint8_t i = 10;
-    uint16_t adcval;
-    uint16_t result[3];
+    uint16_t batt_adcval;
+    uint16_t tof_range[3];
     uint8_t btmp;
     DrvSYS_Init();
 #ifdef DEBUG
@@ -45,15 +46,15 @@ int main(void)
         HlDrvGPIO_ADCVBATT_Enable();
         DrvADC_Init();
         _delay_us(2);
-        adcval = DrvADC_ReadData();
+        batt_adcval = DrvADC_ReadData();
         HlDrvGPIO_ADCVBATT_Disable();
         DrvADC_Deinit();
         _delay_ms(10);
-        printf("%u\r\n", adcval);
+        printf("%u\r\n", batt_adcval);
 
         printf("Abstandssensor ");
         for (i = 0; i < 3; i++)
-            result[i] = 0;
+            tof_range[i] = 0;
         HlDrvGPIO_VL53L0X_Enable();
         DrvTWI_Init(2);
         _delay_ms(2);
@@ -64,23 +65,38 @@ int main(void)
         HlDrvVL53L0X_SetVcselPulsePeriod(VcselPeriodFinalRange, 14);
         HlDrvVL53L0X_SetMeasurementTimingBudget(500 * 1000UL);
         for (i = 0; i < 3; i++)
-            result[i] = HlDrvVL53L0X_ReadRangeSingleMillimeters(&xTraStats);
+            tof_range[i] = HlDrvVL53L0X_ReadRangeSingleMillimeters(&xTraStats);
         HlDrvVL53L0X_Deinit();
         DrvTWI_Deinit();
         HlDrvGPIO_VL53L0X_Disable();
         DrvPWR_SetMCLKDiv(0); // 32Mhz
         for (i = 0; i < 3; i++)
-            printf("val:%i ", result[i]);
+            printf("val:%i ", tof_range[i]);
         printf("\r\n");
         _delay_ms(100);
 
         printf("Funkmodul ");
         DrvSPI_Init();
         if (HlDrvRFM23_Enable())
-            printf("RFM23: Init Failed\n");
+            printf("FAIL ");
         else
-            printf("RFM23: Init OK\n");
+            printf("OK ");
 
+        HlDrvRFM23_DataBuffer[0]=batt_adcval >> 8;
+        HlDrvRFM23_DataBuffer[1]=batt_adcval;
+        HlDrvRFM23_DataBuffer[2]=tof_range[0] >> 8;
+        HlDrvRFM23_DataBuffer[3]=tof_range[0];
+        HlDrvRFM23_DataBuffer[4]=tof_range[1] >> 8;
+        HlDrvRFM23_DataBuffer[5]=tof_range[1];
+        HlDrvRFM23_DataBuffer[6]=tof_range[2] >> 8;
+        HlDrvRFM23_DataBuffer[7]=tof_range[2];
+        for (i = 0; i < 3; i++)
+        {
+            printf("t");
+            sprintf((char*)HlDrvRFM23_DataBuffer,"Ha %i",i);
+            HlDrvRFM23_TransmitData();
+        }
+        printf("\r\n");
         DrvSPI_Deinit();
         HlDrvGPIO_RFM23_Disable();
 

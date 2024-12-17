@@ -16,12 +16,13 @@
 /*************************************************************************
  Initialization of the I2C bus interface. Need to be called only once
 *************************************************************************/
-void DrvTWI_Init(void){
+void DrvTWI_Init(uint8_t twbrset){
     DrvPWR_ModuleEnable(PRR_TWI);
 
   /* initialize TWI clock: 100 kHz clock, TWPS = 0 => prescaler = 1 */
   TWSR = 0;                         /* no prescaler */
-  TWBR = ((F_CPU/SCL_CLOCK)-16)/2;  /* must be > 10 for stable operation */
+  TWBR=twbrset;
+  //TWBR = ((F_CPU/SCL_CLOCK)-16)/2;  /* must be > 10 for stable operation */
 }/* i2c_init */
 
 

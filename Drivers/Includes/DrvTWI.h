@@ -23,7 +23,7 @@
  @param  void
  @return none
  */
-extern void DrvTWI_Init(void);
+extern void DrvTWI_Init(uint8_t twbrset);
 
 
 /** 

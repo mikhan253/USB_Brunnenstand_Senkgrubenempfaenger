@@ -36,10 +36,12 @@ void printports()
 }
 int main(void)
 {
+            statInfo_t xTraStats;
     stdout = &mystdout;
     uint8_t i = 10;
     uint16_t adcval;
-
+uint16_t result[3];
+    uint8_t btmp;
     DrvSYS_Init();
 #ifdef DEBUG
     DrvUSART_Init();
@@ -52,78 +54,54 @@ int main(void)
         _delay_ms(100);
         HlDrvGPIO_LED_Disable();
         _delay_ms(100);
-        //i = DrvUSART_GetChar();
-        //printf("Dein Zeichen war: %i\r\n", i);
-        i='b';
-        switch (i)
-        {
-        case 'a':
-            printf("Batteriespannung ");
-            /* Batteriespannung erfassen*/
-            HlDrvGPIO_ADCVBATT_Enable();
-            DrvADC_Init();
-            _delay_us(2);
-            adcval = DrvADC_ReadData();
-            HlDrvGPIO_ADCVBATT_Disable();
-            DrvADC_Deinit();
-            _delay_ms(10);
-            printf("ADC-Wert: %u\r\n", adcval);
-            break;
-        case 'b':
-            printf("Abstandssensor\r\n");
-uint16_t result;
-while(1){
-            HlDrvGPIO_VL53L0X_Enable();
-            DrvTWI_Init();
-            printf("INIT OK\r\n");
-            _delay_ms(2);
-            printf("HlDrvInit\r\n");
-            HlDrvVL53L0X_Init(0);
-            //HlDrvVL53L0X_Init();
-            HlDrvVL53L0X_SetSignalRateLimit(0.1);
-    HlDrvVL53L0X_SetVcselPulsePeriod(VcselPeriodPreRange, 18);
-    HlDrvVL53L0X_SetVcselPulsePeriod(VcselPeriodFinalRange, 14);
-    HlDrvVL53L0X_SetMeasurementTimingBudget(500 * 1000UL);
-            printf("HlDrvSingleMeasure\r\n");
-            statInfo_t xTraStats;
 
-                 result = HlDrvVL53L0X_ReadRangeSingleMillimeters(&xTraStats);
-            printf("val:%i ",result);
-                 result = HlDrvVL53L0X_ReadRangeSingleMillimeters(&xTraStats);
-            printf("val:%i ",result);
-                 result = HlDrvVL53L0X_ReadRangeSingleMillimeters(&xTraStats);
-            printf("val:%i ",result);
-                 result = HlDrvVL53L0X_ReadRangeSingleMillimeters(&xTraStats);
-            printf("val:%i ",result);
-                 result = HlDrvVL53L0X_ReadRangeSingleMillimeters(&xTraStats);
-            printf("val:%i ",result);
-                 result = HlDrvVL53L0X_ReadRangeSingleMillimeters(&xTraStats);
-            printf("val:%i\r\n",result);
-            HlDrvGPIO_VL53L0X_Disable();
-_delay_ms(100);
-}
+        printf("Batteriespannung ");
+        /* Batteriespannung erfassen*/
+        HlDrvGPIO_ADCVBATT_Enable();
+        DrvADC_Init();
+        _delay_us(2);
+        adcval = DrvADC_ReadData();
+        HlDrvGPIO_ADCVBATT_Disable();
+        DrvADC_Deinit();
+        _delay_ms(10);
+        printf("%u\r\n", adcval);
 
-            //HlDrvVL53L0X_SingleMeasurement();
-            /*i = 0xC0;
-            DrvTWI_MasterSend(0x52, 1, &i);
-            DrvTWI_MasterReceive(0x52, 1, &i);
-            _delay_ms(2);
-            i = 0xC0;
-            DrvTWI_MasterSend(0x52, 1, &i);
-            DrvTWI_MasterReceive(0x52, 1, &i);
-            printf("Wert: %02X\r\n", i);*/
-            //DrvTWI_Deinit();
-            HlDrvGPIO_VL53L0X_Disable();
-            break;
-        case 'c':
-            break;
-        case 'x':
+        printf("Abstandssensor ");
+        for(i=0;i<3;i++)
+            result[i] = 0;
+        HlDrvGPIO_VL53L0X_Enable();
+        DrvTWI_Init(2);
+        _delay_ms(2);
+        btmp = 0x80 | (2 & 0xf); // Master Clock Divider
+        CLKPR = 0x80;
+        CLKPR = btmp;
+        HlDrvVL53L0X_Init();
+        HlDrvVL53L0X_SetSignalRateLimit(0.1);
+        HlDrvVL53L0X_SetVcselPulsePeriod(VcselPeriodPreRange, 18);
+        HlDrvVL53L0X_SetVcselPulsePeriod(VcselPeriodFinalRange, 14);
+        HlDrvVL53L0X_SetMeasurementTimingBudget(500 * 1000UL);
+        for(i=0;i<3;i++)
+            result[i] = HlDrvVL53L0X_ReadRangeSingleMillimeters(&xTraStats);
+        HlDrvGPIO_VL53L0X_Disable();
+        btmp = 0x80 | (0 & 0xf); // Master Clock Divider
+        CLKPR = 0x80;
+        CLKPR = btmp;
+        for(i=0;i<3;i++)
+            printf("val:%i ",result[i]);
+        printf("\r\n");
+        _delay_ms(100);
+        _delay_ms(100);
+        _delay_ms(100);
+        _delay_ms(100);
+        printf("RESTART\r\n");
+
+        /*
             printf("POWEROFF\r\n");
             while (1)
                 HlDrvGPIO_PowerOff();
             break;
-        default:
-        }
+        default:*/
+        
     }
 
     // Device initialization

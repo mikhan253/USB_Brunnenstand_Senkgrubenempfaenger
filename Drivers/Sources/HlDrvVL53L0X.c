@@ -187,7 +187,7 @@ void _HlDrvVL53L0X_ReadMulti(uint8_t reg, uint8_t * dst, uint8_t count) {
 // enough unless a cover glass is added.
 // If io_2v8 (optional) is 1 or not given, the sensor is configured for 2V8
 // mode.
-uint8_t HlDrvVL53L0X_Init( uint8_t io_2v8 ){
+uint8_t HlDrvVL53L0X_Init(){
   // VL53L0X_DataInit() begin
 
 _HlDrvVL53L0X_BulkWrite(HLDRVVL53L0X_BLOB_DATA_INIT);

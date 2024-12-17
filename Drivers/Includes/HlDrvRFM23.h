@@ -24,7 +24,7 @@ extern uint8_t HlDrvRFM23_DataBuffer[RFM23_PACKETLENGTH];
 uint8_t HlDrvRFM23_Enable(void);
 uint8_t HlDrvRFM23_ReceiveData(void);
 uint8_t HlDrvRFM23_TransmitData(void);
-
+void HlDrvRFM23_PrepareTransmit();
 void HlDrvRFM23_Write(uint8_t addr, uint8_t val);
 void HlDrvRFM23_MultipleTransaction(uint8_t write, uint8_t size, uint8_t addr, uint8_t *val);
 uint8_t HlDrvRFM23_Read(uint8_t addr);

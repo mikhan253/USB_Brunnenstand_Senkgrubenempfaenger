@@ -69,10 +69,13 @@ uint8_t HlDrvRFM23_Enable(void)
     PCMSK2 = (1 << PCINT19);
     sei();
 
-    HlDrvGPIO_RFM23_Enable();
+    HlDrvGPIO_RFM23_Enable();    
+    set_sleep_mode(SLEEP_MODE_PWR_DOWN);
     do
         sleep_mode();
     while ((PIND & _BV(PD3)));
+    set_sleep_mode(SLEEP_MODE_IDLE);
+
     if (HlDrvRFM23_Read(0x04) != 0x01) // Kein POR??
         return -1;
     while ((count = pgm_read_byte(&HlDrvRFM23_InitData[dataptr++])))
@@ -98,6 +101,11 @@ uint8_t HlDrvRFM23_ReceiveData(void)
         return -1;
     HlDrvRFM23_MultipleTransaction(0, RFM23_PACKETLENGTH, 0x7F, HlDrvRFM23_DataBuffer);
     return 0;
+}
+
+void HlDrvRFM23_PrepareTransmit()
+{
+    HlDrvRFM23_Write(0x07, 0x09); // TX Mode
 }
 
 uint8_t HlDrvRFM23_TransmitData(void)

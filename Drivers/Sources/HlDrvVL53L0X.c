@@ -761,7 +761,9 @@ uint16_t HlDrvVL53L0X_ReadRangeContinuousMillimeters(statInfo_t *extraStats)
 {
     uint8_t tempBuffer[12];
     uint16_t temp;
+    
     _HlDrvVL53L0X_WaitForInt();
+    
     if (extraStats == 0)
     {
         // assumptions: Linearity Corrective Gain is 1000 (default);
@@ -960,9 +962,11 @@ uint8_t _HlDrvVL53L0X_PerformSingleRefCalibration(uint8_t vhv_init_byte)
 #include <avr/cpufunc.h>
 void _HlDrvVL53L0X_WaitForInt()
 {
+    set_sleep_mode(SLEEP_MODE_PWR_DOWN);
     do
         sleep_mode();
     while ((_HlDrvVL53L0X_ReadReg(RESULT_INTERRUPT_STATUS) & 0x07) == 0);
+    set_sleep_mode(SLEEP_MODE_IDLE);
     // while(PIND & _BV(4))
     //   _NOP();
 }

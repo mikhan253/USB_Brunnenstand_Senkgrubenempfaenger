@@ -56,11 +56,20 @@ const uint8_t HlDrvRFM23_InitData[] PROGMEM = {
 uint8_t HlDrvRFM23_DataBuffer[RFM23_PACKETLENGTH];
 /* im idle-mode soll er im ready mode sein */
 
+#include <avr/interrupt.h>
+#include <avr/sleep.h>
 
 uint8_t HlDrvRFM23_Enable(void)
 {
-    while((PIND & _BV(PD3))) //HIER DEN INTERRUPT EINFÜGEN UND SCHLAFEN
-        asm volatile ("nop");
+    DrvPWR_ModuleEnable(PRR_PCI);
+    PCICR = (1<<PCIE2);
+    PCMSK2 = (1<<PCINT19); 
+    sei();
+
+         HlDrvGPIO_RFM23_Enable();
+    do sleep_mode(); while((PIND & _BV(PD3)));
+    //while((PIND & _BV(PD3))) //HIER DEN INTERRUPT EINFÜGEN UND SCHLAFEN
+    //    asm volatile ("nop");
     if(HlDrvRFM23_Read(0x04) != 0x01) //Kein POR??
         return -1;
     uint8_t dataptr=0;
@@ -72,11 +81,10 @@ uint8_t HlDrvRFM23_Enable(void)
             DrvSPI_transferByte(pgm_read_byte(&HlDrvRFM23_InitData[dataptr++])); //Daten
         DrvSPI_SSOFF();
     }
-#ifdef LLDEBUG
-    _delay_ms(1000); //DEBUG
-    printf("Register DUMP after INIT:\n"); //DEBUG
-    rfm23_temp(); //DEBUG
-#endif
+    asm volatile ("nop");
+    _delay_ms(10); //AUS IRGEND EINEM GRUND MUSS DAS DRINNEN SEIN???
+//    printf("Register DUMP after INIT:\n"); //DEBUG
+//    rfm23_temp(); //DEBUG
     return 0;
 }
 

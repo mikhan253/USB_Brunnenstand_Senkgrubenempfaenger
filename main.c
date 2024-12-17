@@ -92,7 +92,6 @@ uint16_t result[3];
      
      printf("Funkmodul ");
      DrvSPI_Init();
-     HlDrvGPIO_RFM23_Enable();
       if(HlDrvRFM23_Enable())
     	printf("RFM23: Init Failed\n");
      else

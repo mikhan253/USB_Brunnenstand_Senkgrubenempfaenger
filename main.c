@@ -70,11 +70,13 @@ uint16_t result[3];
         for(i=0;i<3;i++)
             result[i] = 0;
         HlDrvGPIO_VL53L0X_Enable();
-        DrvTWI_Init(2);
+        //DrvTWI_Init(2);
+        DrvTWI_Init(32);
+        
         _delay_ms(2);
-        btmp = 0x80 | (2 & 0xf); // Master Clock Divider
-        CLKPR = 0x80;
-        CLKPR = btmp;
+        //btmp = 0x80 | (2 & 0xf); // Master Clock Divider
+        //CLKPR = 0x80;
+        //CLKPR = btmp;
         HlDrvVL53L0X_Init();
         HlDrvVL53L0X_SetSignalRateLimit(0.1);
         HlDrvVL53L0X_SetVcselPulsePeriod(VcselPeriodPreRange, 18);

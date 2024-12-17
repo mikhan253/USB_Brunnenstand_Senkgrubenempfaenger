@@ -8,7 +8,7 @@
 #include "millis.h"
 #include "HlDrvVL53L0X.h"
 #include <avr/pgmspace.h>
-
+#include <stdio.h>
 const uint8_t HlDrvVL53L0X_InitData[] PROGMEM = {
     /*Addr  Data */
 #define HLDRVVL53L0X_BLOB_DEFAULT_TUNING_SETTINGS 0,80
@@ -34,13 +34,21 @@ const uint8_t HlDrvVL53L0X_InitData[] PROGMEM = {
     0x8E, 0x01, 0x00, 0x01, 0xFF, 0x00, 0x80, 0x00,
 #define HLDRVVL53L0X_BLOB_DATA_INIT 160,4
     0x88, 0x00, 0x80, 0x01, 0xFF, 0x01, 0x00, 0x00,
-#define HLDRVVL53L0X_BLOB_DATA_INIT2 164,3
+#define HLDRVVL53L0X_BLOB_DATA_INIT2 168,3
     0x00, 0x01, 0xFF, 0x00, 0x80, 0x00,
-#define HLDRVVL53L0X_BLOB_SET_REFERENCE_SPADS 170,5
+#define HLDRVVL53L0X_BLOB_SET_REFERENCE_SPADS 174,5
     0xFF, 0x01, 0x4F, 0x00, 0x4E, 0x2C, 0xFF, 0x00,
-    0xB6, 0xB4,                                    
-#define HLDRVVL53L0X_BLOB_x 206,
+    0xB6, 0xB4,
+#define HLDRVVL53L0X_BLOB_GET_SPAD_INFO_A 184,4
+    0x80, 0x01, 0xFF, 0x01, 0x00, 0x00, 0xFF, 0x06,
+#define HLDRVVL53L0X_BLOB_GET_SPAD_INFO_B 192,5
+    0xFF, 0x07, 0x81, 0x01, 0x80, 0x01, 0x94, 0x6b, 
+    0x83, 0x00,
+#define HLDRVVL53L0X_BLOB_GET_SPAD_INFO_C 202,4
+    0xFF, 0x01, 0x00, 0x01, 0xFF, 0x00, 0x80, 0x00,
 
+#define HLDRVVL53L0X_BLOB_x 206,
+//_HlDrvVL53L0X_BulkWrite(HLDRVVL53L0X_BLOB_GET_SPAD_INFO_A);
 };
 
 
@@ -76,6 +84,9 @@ uint8_t buffer[3];
 
 void _HlDrvVL53L0X_BulkWrite(uint8_t start, uint8_t count)
 {
+#ifdef LLDEBUG
+            printf("bulkwrite %i->%02X\r\n",start,pgm_read_byte(&HlDrvVL53L0X_InitData[start]));
+#endif
     while (count--)
     {
         buffer[0] = pgm_read_byte(&HlDrvVL53L0X_InitData[start++]);
@@ -134,19 +145,6 @@ uint16_t _HlDrvVL53L0X_ReadReg16Bit(uint8_t reg) {
   return value;
 }
 
-// Read a 32-bit register
-uint32_t _HlDrvVL53L0X_ReadReg32Bit(uint8_t reg) {
-  uint32_t value;
-  DrvTWI_Start( g_i2cAddr | I2C_WRITE );
-  DrvTWI_Write( reg );
-  DrvTWI_RepeatedStart( g_i2cAddr | I2C_READ );
-  value  = (uint32_t)DrvTWI_ReadAck() <<24;
-  value |= (uint32_t)DrvTWI_ReadAck() <<16;
-  value |= (uint32_t)DrvTWI_ReadAck() << 8;
-  value |= DrvTWI_ReadNAck();
-  DrvTWI_Stop();
-  return value;
-}
 
 // Write an arbitrary number of bytes from the given array to the sensor,
 // starting at the given register
@@ -806,19 +804,11 @@ uint16_t getTimeout(void){
 uint8_t _HlDrvVL53L0X_GetSPADInfo(uint8_t * count, uint8_t * type_is_aperture)
 {
   uint8_t tmp;
-  _HlDrvVL53L0X_WriteReg(0x80, 0x01);
-  _HlDrvVL53L0X_WriteReg(0xFF, 0x01);
-  _HlDrvVL53L0X_WriteReg(0x00, 0x00);
-
-  _HlDrvVL53L0X_WriteReg(0xFF, 0x06);
+  //GETSPADINFOA
+    _HlDrvVL53L0X_BulkWrite(HLDRVVL53L0X_BLOB_GET_SPAD_INFO_A);
+    //0x80, 0x01, 0xFF, 0x01, 0x00, 0x00, 0xFF, 0x06,
   _HlDrvVL53L0X_WriteReg(0x83, _HlDrvVL53L0X_ReadReg(0x83) | 0x04);
-  _HlDrvVL53L0X_WriteReg(0xFF, 0x07);
-  _HlDrvVL53L0X_WriteReg(0x81, 0x01);
-
-  _HlDrvVL53L0X_WriteReg(0x80, 0x01);
-
-  _HlDrvVL53L0X_WriteReg(0x94, 0x6b);
-  _HlDrvVL53L0X_WriteReg(0x83, 0x00);
+    _HlDrvVL53L0X_BulkWrite(HLDRVVL53L0X_BLOB_GET_SPAD_INFO_B);
   startTimeout();
   while (_HlDrvVL53L0X_ReadReg(0x83) == 0x00)
   {
@@ -833,11 +823,7 @@ uint8_t _HlDrvVL53L0X_GetSPADInfo(uint8_t * count, uint8_t * type_is_aperture)
   _HlDrvVL53L0X_WriteReg(0x81, 0x00);
   _HlDrvVL53L0X_WriteReg(0xFF, 0x06);
   _HlDrvVL53L0X_WriteReg(0x83, _HlDrvVL53L0X_ReadReg(0x83)  & ~0x04);
-  _HlDrvVL53L0X_WriteReg(0xFF, 0x01);
-  _HlDrvVL53L0X_WriteReg(0x00, 0x01);
-
-  _HlDrvVL53L0X_WriteReg(0xFF, 0x00);
-  _HlDrvVL53L0X_WriteReg(0x80, 0x00);
+  _HlDrvVL53L0X_BulkWrite(HLDRVVL53L0X_BLOB_GET_SPAD_INFO_C);
 
   return 1;
 }

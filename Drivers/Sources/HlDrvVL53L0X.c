@@ -227,7 +227,6 @@ uint8_t HlDrvVL53L0X_Init()
     // VL53L0X_DataInit() end
 
     // VL53L0X_StaticInit() begin
-
     uint8_t spad_count;
     uint8_t spad_type_is_aperture;
     if (!_HlDrvVL53L0X_GetSPADInfo(&spad_count, &spad_type_is_aperture))
@@ -321,7 +320,6 @@ uint8_t HlDrvVL53L0X_Init()
 
     // "restore the previous Sequence Config"
     _HlDrvVL53L0X_WriteReg(SYSTEM_SEQUENCE_CONFIG, 0xE8);
-
     // VL53L0X_PerformRefCalibration() end
 
     return 1;
@@ -962,11 +960,9 @@ uint8_t _HlDrvVL53L0X_PerformSingleRefCalibration(uint8_t vhv_init_byte)
 #include <avr/cpufunc.h>
 void _HlDrvVL53L0X_WaitForInt()
 {
-    set_sleep_mode(SLEEP_MODE_PWR_DOWN);
     do
         sleep_mode();
     while ((_HlDrvVL53L0X_ReadReg(RESULT_INTERRUPT_STATUS) & 0x07) == 0);
-    set_sleep_mode(SLEEP_MODE_IDLE);
     // while(PIND & _BV(4))
     //   _NOP();
 }

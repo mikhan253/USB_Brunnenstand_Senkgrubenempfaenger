@@ -10,7 +10,8 @@
         "sfr_defs.h": "c",
         "iom328p.h": "c",
         "drvtwi.h": "c",
-        "lgt8f328p_spec.h": "c"
+        "lgt8f328p_spec.h": "c",
+        "inttypes.h": "c"
     },
     "editor.detectIndentation": false
 }

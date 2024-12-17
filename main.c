@@ -32,8 +32,10 @@ int main(void)
     DrvUSART_Init();
 #endif
 
+
     HlDrvGPIO_LED_Enable();
     _delay_ms(100);
+    printf("TESTPROGRAMM\r\n");
     HlDrvGPIO_LED_Disable();
     _delay_ms(100);
 
@@ -46,8 +48,10 @@ int main(void)
     HlDrvGPIO_ADCVBATT_Disable();
     DrvADC_Deinit();
     /* VL53L0X starten */
-    DrvTWI_Init(2);
-    DrvPWR_SetMCLKDiv(2); // 8Mhz
+    DrvTWI_Init(32);
+    DrvPWR_SetMCLKDiv(0); // 8Mhz
+    //DrvTWI_Init(2);
+    //DrvPWR_SetMCLKDiv(2); // 8Mhz
     HlDrvVL53L0X_Init();
     HlDrvVL53L0X_SetSignalRateLimit(0.1);
     HlDrvVL53L0X_SetVcselPulsePeriod(VcselPeriodPreRange, 18);
@@ -75,6 +79,7 @@ int main(void)
         HlDrvRFM23_DataBuffer[6]=tof_range[2] >> 8;
         HlDrvRFM23_DataBuffer[7]=tof_range[2];
         HlDrvRFM23_TransmitData();
+
     }
     DrvSPI_Deinit();
     HlDrvGPIO_RFM23_Disable();

@@ -70,11 +70,9 @@ uint8_t HlDrvRFM23_Enable(void)
     sei();
 
     HlDrvGPIO_RFM23_Enable();    
-    set_sleep_mode(SLEEP_MODE_PWR_DOWN);
     do
         sleep_mode();
     while ((PIND & _BV(PD3)));
-    set_sleep_mode(SLEEP_MODE_IDLE);
 
     if (HlDrvRFM23_Read(0x04) != 0x01) // Kein POR??
         return -1;

@@ -14,12 +14,6 @@
 /*****************************************************************************
  *  Headers                                                                  *
  *****************************************************************************/
-#include <avr/sfr_defs.h>
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#include <avr/sleep.h>
-#include "DrvSYS.h"
-#include "lgt8f328p_spec.h"
 
 /*****************************************************************************
  *  Definitionen                                                             *
@@ -41,27 +35,14 @@
  * @fn static inline void DrvADC_Init()
  * @brief Initialisiert ADC
  **/
-static inline void DrvADC_Init()
-{
-    // ADC Multiplexer Selection Register
-    DrvPWR_ModuleEnable(PRR_ADC);
-    VCAL = INIT_VCAL;
-    ADMUX = INIT_ADC_CHMUX | INIT_ADMUX_REFS;
-    ADCSRD = INIT_ADCSRD_REFS;
-    ADCSRA = _BV(ADEN) | _BV(ADIE) | 5; // INT und 1MHz ADCCLK
-    sei();
-}
+void DrvADC_Init();
 
 /**
  * @fn static inline void DrvADC_Deinit()
  * @brief Deinitialisiert ADC
  **/
-static inline void DrvADC_Deinit()
-{
-    cli();
-    ADCSRA = 0;
-    DrvPWR_ModuleDisable(PRR_ADC);
-}
+void DrvADC_Deinit();
+
 
 /**
     @brief    Lese Wert von ADC

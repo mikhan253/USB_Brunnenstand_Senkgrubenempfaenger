@@ -85,5 +85,6 @@
 void DrvSYS_SetMCLKDiv(uint8_t div);
 void DrvSYS_Init();
 void DrvSYS_Reset();
+void DrvSYS_IdleSleep();
 
 #endif

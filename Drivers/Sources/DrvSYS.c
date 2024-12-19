@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <avr/sfr_defs.h>
 #include <avr/io.h>
+#include <avr/interrupt.h>
+#include <avr/sleep.h>
 #include "DrvSYS.h"
 #include "lgt8f328p_spec.h"
 
@@ -50,4 +52,12 @@ void DrvSYS_Reset()
 {
     VDTCR = _BV(WCE);
     VDTCR = _BV(WCE) | _BV(SWR);
+}
+
+void DrvSYS_IdleSleep()
+{
+    set_sleep_mode(SLEEP_MODE_IDLE);
+    sei();
+    sleep_mode();
+    cli();
 }

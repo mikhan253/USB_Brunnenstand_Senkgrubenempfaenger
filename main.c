@@ -6,6 +6,7 @@
 #include "DrvUSART.h"
 #include "DrvADC.h"
 #include "DrvTWI.h"
+#include "DrvWDT.h"
 #include "DrvSPI.h"
 #include "HlDrvVL53L0X.h"
 #include "HlDrvRFM23.h"
@@ -48,12 +49,13 @@ int main(void)
 
     /* VL53L0X starten */
     HlDrvGPIO_VL53L0X_Enable();
-    
-    //WATCHDOG 2ms
-    //DrvTWI_Init(32);
-    //DrvPWR_SetMCLKDiv(0); // 32Mhz
     DrvTWI_Init(2);
     DrvSYS_SetMCLKDiv(2); // 8Mhz
+
+    DrvWDT_Init(WDT_2MS,0);
+    DrvSYS_IdleSleep();
+    DrvWDT_Deinit();
+
     HlDrvVL53L0X_Init();
     HlDrvVL53L0X_SetSignalRateLimit(0.1);
     HlDrvVL53L0X_SetVcselPulsePeriod(VcselPeriodPreRange, 18);
@@ -65,11 +67,16 @@ int main(void)
     DrvTWI_Deinit();
     HlDrvGPIO_VL53L0X_Disable();
     DrvSYS_SetMCLKDiv(0); // 32Mhz
+
     /* RFM23 starten */
     DrvSPI_Init();
     HlDrvRFM23_Enable();
     HlDrvRFM23_PrepareTransmit();
-    _delay_us(500);
+
+    DrvWDT_Init(WDT_1MS,0);
+    DrvSYS_IdleSleep();
+    DrvWDT_Deinit();
+
     for (i = 0; i < 3; i++)
     {
         HlDrvRFM23_DataBuffer[0]=batt_adcval >> 8;

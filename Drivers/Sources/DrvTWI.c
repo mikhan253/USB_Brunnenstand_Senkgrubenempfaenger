@@ -14,27 +14,39 @@
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
 
+
+static inline void _DrvTWI_WaitForInt()
+{
+    set_sleep_mode(SLEEP_MODE_IDLE);
+    //set watchdog for 1ms
+    sei();
+    do
+        sleep_mode();
+    while (!(TWCR & _BV(TWINT)));
+    cli();
+}
+
+ISR(TWI_vect)
+{
+    return;
+}
+
 /*************************************************************************
  Initialization of the I2C bus interface. Need to be called only once
 *************************************************************************/
 void DrvTWI_Init(uint8_t twbrset)
 {
     DrvPWR_ModuleEnable(PRR_TWI);
-
-    /* initialize TWI clock: 100 kHz clock, TWPS = 0 => prescaler = 1 */
     TWSR = 0; /* no prescaler */
-    TWBR = twbrset;
-    set_sleep_mode(SLEEP_MODE_IDLE);
-    sei();
     // TWBR = ((F_CPU/SCL_CLOCK)-16)/2;  /* must be > 10 for stable operation */
-} /* i2c_init */
+    TWBR = twbrset;
+}
 
 void DrvTWI_Deinit()
 {
-    cli();
     TWCR = 0;
     DrvPWR_ModuleDisable(PRR_TWI);
-} /* i2c_init */
+}
 
 /*************************************************************************
   Issues a start condition and sends address and transfer direction.
@@ -48,9 +60,7 @@ uint8_t DrvTWI_Start(uint8_t address)
     TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN) | (1 << TWIE);
 
     // wait until  START condition has been transmitted
-    do
-        sleep_mode();
-    while (!(TWCR & (1 << TWINT)));
+    _DrvTWI_WaitForInt();
 
     // check value of TWI Status Register. Mask prescaler bits.
     twst = TW_STATUS & 0xF8;
@@ -61,9 +71,9 @@ uint8_t DrvTWI_Start(uint8_t address)
     TWDR = address;
     TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWIE);
     // wail until transmission completed and ACK/NACK has been received
-    do
-        sleep_mode();
-    while (!(TWCR & (1 << TWINT)));
+    _DrvTWI_WaitForInt();
+    //!!WDT!! 1ms --> reset wenn nicht fertig
+
     // check value of TWI Status Register. Mask prescaler bits.
     twst = TW_STATUS & 0xF8;
     if ((twst != TW_MT_SLA_ACK) && (twst != TW_MR_SLA_ACK))
@@ -88,9 +98,7 @@ void DrvTWI_StartWait(uint8_t address)
         TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN) | (1 << TWIE);
 
         // wait until transmission completed
-        do
-            sleep_mode();
-        while (!(TWCR & (1 << TWINT)));
+        _DrvTWI_WaitForInt();
 
         // check value of TWI Status Register. Mask prescaler bits.
         twst = TW_STATUS & 0xF8;
@@ -102,9 +110,7 @@ void DrvTWI_StartWait(uint8_t address)
         TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWIE);
 
         // wail until transmission completed
-        do
-            sleep_mode();
-        while (!(TWCR & (1 << TWINT)));
+        _DrvTWI_WaitForInt();
 
         // check value of TWI Status Register. Mask prescaler bits.
         twst = TW_STATUS & 0xF8;
@@ -137,7 +143,7 @@ uint8_t DrvTWI_RepeatedStart(uint8_t address)
 {
     return DrvTWI_Start(address);
 
-} /* i2c_rep_start */
+}
 
 /*************************************************************************
  Terminates the data transfer and releases the I2C bus
@@ -147,14 +153,10 @@ void DrvTWI_Stop(void)
     /* send stop condition */
     TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWSTO);
     // wait until stop condition is executed and bus released
-
-    while (1)
-    {
-        if (!(TWCR & (1 << TWSTO)))
-        {
-            return;
-        }
-    }
+    while (TWCR & (1 << TWSTO))
+        ;
+    //!!WDT!! 1ms --> reset wenn nicht fertig
+    _DrvTWI_WaitForInt();
     // debug_str("i2c_stop(): timeout\n");
 } /* i2c_stop */
 
@@ -174,9 +176,6 @@ uint8_t DrvTWI_Write(uint8_t data)
 
     // wait until transmission completed
     // wait until  START condition has been transmitted
-    do
-        sleep_mode();
-    while (!(TWCR & (1 << TWINT)));
 
     // check value of TWI Status Register. Mask prescaler bits
     twst = TW_STATUS & 0xF8;
@@ -197,9 +196,8 @@ uint8_t DrvTWI_Write(uint8_t data)
 uint8_t DrvTWI_ReadAck(void)
 {
     TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWEA) | (1 << TWIE);
-    do
-        sleep_mode();
-    while (!(TWCR & (1 << TWINT)));
+    _DrvTWI_WaitForInt();
+
     return TWDR;
 } /* i2c_readAck */
 
@@ -211,13 +209,8 @@ uint8_t DrvTWI_ReadAck(void)
 uint8_t DrvTWI_ReadNAck(void)
 {
     TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWIE);
-    do
-        sleep_mode();
-    while (!(TWCR & (1 << TWINT)));
+    _DrvTWI_WaitForInt();
+
     return TWDR;
 } /* i2c_readNak */
 
-ISR(TWI_vect)
-{
-    return;
-}

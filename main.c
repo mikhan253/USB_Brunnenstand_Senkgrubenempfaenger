@@ -12,57 +12,59 @@
 
 #ifdef DEBUG
 #include <stdio.h> //nur zum debuggen
-#endif
 static int uart_putchar(char c, FILE *stream)
 {
     DrvUSART_PutChar(c);
     return 0;
 }
 static FILE mystdout = FDEV_SETUP_STREAM(uart_putchar, NULL, _FDEV_SETUP_WRITE);
+#endif
 
 int main(void)
 {
     statInfo_t xTraStats;
-    stdout = &mystdout;
-    uint8_t i = 10;
+    uint8_t i;
     uint16_t batt_adcval;
     uint16_t tof_range[3];
     DrvSYS_Init();
+
 #ifdef DEBUG
     DrvUSART_Init();
-#endif
-
+    stdout = &mystdout;
 
     HlDrvGPIO_LED_Enable();
     _delay_ms(100);
     printf("TESTPROGRAMM\r\n");
     HlDrvGPIO_LED_Disable();
     _delay_ms(100);
+#endif
 
-    /* Batteriespannung erfassen und VL53L0X starten*/
-    HlDrvGPIO_VL53L0X_Enable();
-    HlDrvGPIO_ADCVBATT_Enable();
+    /* Batteriespannung erfassen*/
+    HlDrvGPIO_ADCVBATT_Enable(); //2us bis Signal stabil
     DrvADC_Init();
-    _delay_us(2);
     batt_adcval = DrvADC_ReadData();
     HlDrvGPIO_ADCVBATT_Disable();
     DrvADC_Deinit();
+
     /* VL53L0X starten */
-    DrvTWI_Init(32);
-    DrvPWR_SetMCLKDiv(0); // 8Mhz
-    //DrvTWI_Init(2);
-    //DrvPWR_SetMCLKDiv(2); // 8Mhz
+    HlDrvGPIO_VL53L0X_Enable();
+    
+    //WATCHDOG 2ms
+    //DrvTWI_Init(32);
+    //DrvPWR_SetMCLKDiv(0); // 32Mhz
+    DrvTWI_Init(2);
+    DrvSYS_SetMCLKDiv(2); // 8Mhz
     HlDrvVL53L0X_Init();
     HlDrvVL53L0X_SetSignalRateLimit(0.1);
     HlDrvVL53L0X_SetVcselPulsePeriod(VcselPeriodPreRange, 18);
     HlDrvVL53L0X_SetVcselPulsePeriod(VcselPeriodFinalRange, 14);
-    HlDrvVL53L0X_SetMeasurementTimingBudget(500 * 1000UL);
+    HlDrvVL53L0X_SetMeasurementTimingBudget(200 * 1000UL);
     for (i = 0; i < 3; i++)
         tof_range[i] = HlDrvVL53L0X_ReadRangeSingleMillimeters(&xTraStats);
     HlDrvVL53L0X_Deinit();
     DrvTWI_Deinit();
     HlDrvGPIO_VL53L0X_Disable();
-    DrvPWR_SetMCLKDiv(0); // 32Mhz
+    DrvSYS_SetMCLKDiv(0); // 32Mhz
     /* RFM23 starten */
     DrvSPI_Init();
     HlDrvRFM23_Enable();

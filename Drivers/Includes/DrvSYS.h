@@ -42,13 +42,6 @@
 #define INIT_PORTF (0 & _BV(0)) | (0 & _BV(1)) | (0 & _BV(2))
 
 /*****************************************************************************
- *  Headers                                                                  *
- *****************************************************************************/
-#include <avr/sfr_defs.h>
-#include <avr/io.h>
-#include "lgt8f328p_spec.h"
-
-/*****************************************************************************
  *  Definitionen                                                             *
  *****************************************************************************/
 #define PRR_ADC 0x0001
@@ -58,7 +51,6 @@
 #define PRR_TIM0 0x0020
 #define PRR_TIM2 0x0040
 #define PRR_TWI 0x0080
-
 #define PRR_PCI 0x0200
 #define PRR_EFL 0x0400
 #define PRR_WDT 0x2000
@@ -70,14 +62,11 @@
 /*****************************************************************************
  *  Makros                                                                   *
  *****************************************************************************/
-#define DrvPWR_SetMCLKDiv(div) \
-    CLKPR = 0x80;              \
-    CLKPR = 0x80 | (div & 0xf);
 #define DrvPWR_ModuleEnable(ID) PRR10 &= ~ID
 #define DrvPWR_ModuleDisable(ID) PRR10 |= ID
 #define DrvGPIO_SetPin(BANK, NR) PORT##BANK |= _BV(NR)
 #define DrvGPIO_ClearPin(BANK, NR) PORT##BANK &= ~_BV(NR)
-#define DrvGPIO_TogglePin(BANK, NR) PORT##BANK ^= _BV(NR)
+#define DrvGPIO_TogglePin(BANK, NR) PIN##BANK |= _BV(NR)
 #define HlDrvGPIO_VL53L0X_Disable() PORTB &= ~_BV(0)
 #define HlDrvGPIO_VL53L0X_Enable() PORTB |= _BV(0)
 #define HlDrvGPIO_RFM23_Disable() PORTB |= _BV(1)
@@ -92,32 +81,9 @@
  *  Funktionen                                                               *
  *****************************************************************************/
 
-/**
- * @fn static inline void DrvSYS_Init()
- * @brief Initialisiert CLOCK und GPIO
- **/
-static inline void DrvSYS_Init()
-{
-    DrvPWR_SetMCLKDiv(INIT_MCK_CLKDIV);
 
-    // Ports definieren
-    DDRB = INIT_DDRB;
-    PORTB = INIT_PORTB;
-    DDRC = INIT_DDRC;
-    PORTC = INIT_PORTC;
-    DDRD = INIT_DDRD;
-    PORTD = INIT_PORTD;
-    DDRE = INIT_DDRE;
-    PORTE = INIT_PORTE;
-    DDRF = INIT_DDRF;
-    PORTF = INIT_PORTF;
-
-    // Power Reduce
-    PRR10 = PRR_ADC | PRR_USART0 | PRR_SPI | PRR_TIM1 | PRR_TIM0 | PRR_TIM2 | PRR_TWI | PRR_PCI | PRR_EFL | PRR_WDT;
-#ifdef DEBUG
-    DrvPWR_ModuleEnable(PRR_USART0);
-#endif
-
-}
+void DrvSYS_SetMCLKDiv(uint8_t div);
+void DrvSYS_Init();
+void DrvSYS_Reset();
 
 #endif

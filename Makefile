@@ -19,7 +19,7 @@ LDFLAGS = $(COMMON) -Wl,-Map=$(PROJECT).map
 HEX_FLASH_FLAGS = -R .eeprom -R .fuse -R .lock -R .singature
 HEX_EEPROM_FLAGS = -j .eeprom --set-section-flags=.eeprom="alloc,load" --change-section-lma .eeprom=0 --no-change-warnings
 INCLUDES =  -I./Drivers/Includes
-OBJECTS =  main.o DrvUSART.o DrvADC.o DrvTWI.o HlDrvVL53L0X.o DrvSPI.o HlDrvRFM23.o
+OBJECTS =  main.o DrvSYS.o DrvUSART.o DrvADC.o DrvTWI.o HlDrvVL53L0X.o DrvSPI.o HlDrvRFM23.o
 SOBJECTS =  start.o
 EXTOBJS = 
 

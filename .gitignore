@@ -1,11 +1,5 @@
-/DrvADC.o
-/DrvTWI.o
-/DrvUSART.o
-/HlDrvVL53L0X.o
 /USBRF.elf
 /USBRF.hex
 /USBRF.lss
 /USBRF.map
-/main.o
-/millis.o
-/start.o
+*.o

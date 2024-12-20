@@ -191,7 +191,7 @@ uint16_t HlDrvVL53L0X_ReadRangeSingleMillimeters(statInfo_t *extraStats);
 //---------------------------------------------------------
 // I2C communication Functions
 //---------------------------------------------------------
-void _HlDrvVL53L0X_WaitForInt();
+void _HlDrvVL53L0X_WaitForInt(uint8_t val);
 void _HlDrvVL53L0X_WriteReg(uint8_t reg, uint8_t value);       // Write an 8-bit register
 void _HlDrvVL53L0X_WriteReg16Bit(uint8_t reg, uint16_t value); // Write a 16-bit register
 void _HlDrvVL53L0X_WriteReg32Bit(uint8_t reg, uint32_t value); // Write a 32-bit register

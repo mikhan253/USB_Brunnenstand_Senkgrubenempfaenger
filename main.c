@@ -27,6 +27,7 @@ int main(void)
     uint8_t i;
     uint16_t batt_adcval;
     uint16_t tof_range[3];
+    int8_t temperature;
     DrvSYS_Init();
 
 #ifdef DEBUG
@@ -71,6 +72,7 @@ int main(void)
     /* RFM23 starten */
     DrvSPI_Init();
     HlDrvRFM23_Enable();
+    temperature=HlDrvRFM23_Temperature();
     HlDrvRFM23_PrepareTransmit();
 
     DrvWDT_Init(WDT_1MS,0);
@@ -87,6 +89,7 @@ int main(void)
         HlDrvRFM23_DataBuffer[5]=tof_range[1];
         HlDrvRFM23_DataBuffer[6]=tof_range[2] >> 8;
         HlDrvRFM23_DataBuffer[7]=tof_range[2];
+        HlDrvRFM23_DataBuffer[8]=temperature;
         HlDrvRFM23_TransmitData();
 
     }

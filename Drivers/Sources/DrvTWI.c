@@ -8,22 +8,19 @@
  **************************************************************************/
 #include <inttypes.h>
 #include <compat/twi.h>
-// #include "debugPrint.h"
-#include "DrvTWI.h"
-#include "DrvSYS.h"
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
-
+#include "DrvTWI.h"
+#include "DrvSYS.h"
+#include "DrvWDT.h"
 
 static inline void _DrvTWI_WaitForInt()
 {
-    set_sleep_mode(SLEEP_MODE_IDLE);
-    //set watchdog for 1ms
-    sei();
+    DrvWDT_Init(WDT_1MS,1); //Reset bei Fehler
     do
-        sleep_mode();
+        DrvSYS_IdleSleep();
     while (!(TWCR & _BV(TWINT)));
-    cli();
+    DrvWDT_Deinit();
 }
 
 ISR(TWI_vect)
@@ -120,8 +117,11 @@ void DrvTWI_StartWait(uint8_t address)
             TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWSTO);
 
             // wait until stop condition is executed and bus released
+            DrvWDT_Init(WDT_1MS,1); //Reset bei Fehler
             while (TWCR & (1 << TWSTO))
                 ;
+            DrvWDT_Deinit();
+
 
             continue;
         }
@@ -153,11 +153,10 @@ void DrvTWI_Stop(void)
     /* send stop condition */
     TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWSTO);
     // wait until stop condition is executed and bus released
+    DrvWDT_Init(WDT_1MS,1); //Reset bei Fehler
     while (TWCR & (1 << TWSTO))
         ;
-    //!!WDT!! 1ms --> reset wenn nicht fertig
-    _DrvTWI_WaitForInt();
-    // debug_str("i2c_stop(): timeout\n");
+    DrvWDT_Deinit();
 } /* i2c_stop */
 
 /*************************************************************************

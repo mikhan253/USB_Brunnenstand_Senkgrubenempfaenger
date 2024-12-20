@@ -11,7 +11,7 @@
 /**********************************************************************************
  ** Macros und Definitionen                                                      **
  **********************************************************************************/
-#define RFM23_PACKETLENGTH 8
+#define RFM23_PACKETLENGTH 9
 extern uint8_t HlDrvRFM23_DataBuffer[RFM23_PACKETLENGTH];
 /**********************************************************************************
  ** Funktionen                                                                   **
@@ -28,6 +28,6 @@ void HlDrvRFM23_PrepareTransmit();
 void HlDrvRFM23_Write(uint8_t addr, uint8_t val);
 void HlDrvRFM23_MultipleTransaction(uint8_t write, uint8_t size, uint8_t addr, uint8_t *val);
 uint8_t HlDrvRFM23_Read(uint8_t addr);
-
+int8_t HlDrvRFM23_Temperature();
 uint8_t rfm23_temp();
 #endif

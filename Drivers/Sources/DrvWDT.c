@@ -1,5 +1,6 @@
 #include "DrvWDT.h"
 #include <avr/sfr_defs.h>
+#include <avr/interrupt.h>
 //#include "DrvSYS.h"
 #include "lgt8f328p_spec.h"
 

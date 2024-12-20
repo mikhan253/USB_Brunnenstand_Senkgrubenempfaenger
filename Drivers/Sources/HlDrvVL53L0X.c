@@ -9,8 +9,8 @@
 #include "HlDrvVL53L0X.h"
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
-#include <avr/sleep.h>
-#include <stdio.h>
+#include "DrvWDT.h"
+
 const uint8_t HlDrvVL53L0X_InitData[] PROGMEM = {
 /*Addr  Data */
 #define HLDRVVL53L0X_BLOB_DEFAULT_TUNING_SETTINGS 0, 80
@@ -760,7 +760,7 @@ uint16_t HlDrvVL53L0X_ReadRangeContinuousMillimeters(statInfo_t *extraStats)
     uint8_t tempBuffer[12];
     uint16_t temp;
     
-    _HlDrvVL53L0X_WaitForInt();
+    _HlDrvVL53L0X_WaitForInt(WDT_256MS);
     
     if (extraStats == 0)
     {
@@ -825,9 +825,11 @@ uint8_t _HlDrvVL53L0X_GetSPADInfo(uint8_t *count, uint8_t *type_is_aperture)
     // 0x80, 0x01, 0xFF, 0x01, 0x00, 0x00, 0xFF, 0x06,
     _HlDrvVL53L0X_WriteReg(0x83, _HlDrvVL53L0X_ReadReg(0x83) | 0x04);
     _HlDrvVL53L0X_BulkWrite(HLDRVVL53L0X_BLOB_GET_SPAD_INFO_B);
-    while (_HlDrvVL53L0X_ReadReg(0x83) == 0x00)
-    {
-    }
+    
+    DrvWDT_Init(WDT_32MS,1);
+    while (_HlDrvVL53L0X_ReadReg(0x83) == 0x00);
+    DrvWDT_Deinit();
+
     _HlDrvVL53L0X_WriteReg(0x83, 0x01);
     tmp = _HlDrvVL53L0X_ReadReg(0x92);
 
@@ -950,19 +952,21 @@ uint32_t _HlDrvVL53L0X_TimeoutMicrosecondsToMclks(uint32_t timeout_period_us, ui
 uint8_t _HlDrvVL53L0X_PerformSingleRefCalibration(uint8_t vhv_init_byte)
 {
     _HlDrvVL53L0X_WriteReg(SYSRANGE_START, 0x01 | vhv_init_byte); // VL53L0X_REG_SYSRANGE_MODE_START_STOP
-    _HlDrvVL53L0X_WaitForInt();
+    _HlDrvVL53L0X_WaitForInt(WDT_32MS); //HERAUSMESSEN???
     _HlDrvVL53L0X_WriteReg(SYSTEM_INTERRUPT_CLEAR, 0x01);
 
     _HlDrvVL53L0X_WriteReg(SYSRANGE_START, 0x00);
 
     return 1;
 }
-#include <avr/cpufunc.h>
-void _HlDrvVL53L0X_WaitForInt()
+
+void _HlDrvVL53L0X_WaitForInt(uint8_t val)
 {
+    DrvWDT_Init(val,1); //Reset bei Fehler
     do
-        sleep_mode();
+        DrvSYS_IdleSleep();
     while ((_HlDrvVL53L0X_ReadReg(RESULT_INTERRUPT_STATUS) & 0x07) == 0);
+    DrvWDT_Deinit();
     // while(PIND & _BV(4))
     //   _NOP();
 }

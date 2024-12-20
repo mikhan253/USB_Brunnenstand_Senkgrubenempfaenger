@@ -9,6 +9,7 @@
 #include "lgt8f328p_spec.h"
 #include "DrvSPI.h"
 #include "DrvSYS.h"
+#include "DrvWDT.h"
 /**********************************************************************************
  ** Funktionen                                                                   **
  **********************************************************************************/
@@ -46,8 +47,11 @@ uint8_t DrvSPI_transferByte(uint8_t data)
     uint8_t rxdd;
 
     SPDR = data;
-    while ((SPFR & (1 << RDEMPT)))
-        ;
+
+    DrvWDT_Init(WDT_1MS,1); //Reset bei Fehler
+    while ((SPFR & (1 << RDEMPT)));
+    DrvWDT_Deinit();
+
     rxdd = SPDR;
     SPFR = _BV(RDEMPT) | _BV(WREMPT);
 
@@ -70,28 +74,39 @@ uint16_t DrvSPI_transferWord(uint16_t data)
     if (!(SPCR & (1 << DORD)))
     {
         SPDR = din.msb;
-        while ((SPFR & _BV(RDEMPT)))
-            ;
+
+        DrvWDT_Init(WDT_1MS,1); //Reset bei Fehler
+        while ((SPFR & (1 << RDEMPT)));
+        DrvWDT_Deinit();
+
         dout.msb = SPDR;
         SPFR = _BV(RDEMPT) | _BV(WREMPT);
 
         SPDR = din.lsb;
-        while ((SPFR & _BV(RDEMPT)))
-            ;
+
+        DrvWDT_Init(WDT_1MS,1); //Reset bei Fehler
+        while ((SPFR & (1 << RDEMPT)));
+        DrvWDT_Deinit();
+
         dout.lsb = SPDR;
         SPFR = _BV(RDEMPT) | _BV(WREMPT);
     }
     else
     {
         SPDR = din.lsb;
-        while ((SPFR & _BV(RDEMPT)))
+        DrvWDT_Init(WDT_1MS,1); //Reset bei Fehler
+        while ((SPFR & (1 << RDEMPT)));
+        DrvWDT_Deinit();
             ;
         dout.lsb = SPDR;
         SPFR = _BV(RDEMPT) | _BV(WREMPT);
 
         SPDR = din.msb;
-        while ((SPFR & _BV(RDEMPT)))
-            ;
+
+        DrvWDT_Init(WDT_1MS,1); //Reset bei Fehler
+        while ((SPFR & (1 << RDEMPT)));
+        DrvWDT_Deinit();
+
         dout.msb = SPDR;
         SPFR = _BV(RDEMPT) | _BV(WREMPT);
     }
@@ -112,20 +127,21 @@ void DrvSPI_transferBuffer(uint8_t *src, uint8_t length)
     while (--length > 0)
     {
         uint8_t out = *(p + 1);
-        while ((SPFR & _BV(RDEMPT)))
-            ;
+
+        DrvWDT_Init(WDT_1MS,1); //Reset bei Fehler
+        while ((SPFR & (1 << RDEMPT)));
+        DrvWDT_Deinit();
+
         uint8_t in = SPDR;
         SPFR = _BV(RDEMPT) | _BV(WREMPT);
         SPDR = out;
         *p++ = in;
     }
 
-    while ((SPFR & _BV(RDEMPT)))
-        ;
+    DrvWDT_Init(WDT_1MS,1); //Reset bei Fehler
+    while ((SPFR & (1 << RDEMPT)));
+    DrvWDT_Deinit();
+
     *p = SPDR;
     SPFR = _BV(RDEMPT) | _BV(WREMPT);
 }
-
-/**********************************************************************************
-*** EOF										***
-***********************************************************************************/

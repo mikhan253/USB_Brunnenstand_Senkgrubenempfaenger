@@ -27,34 +27,24 @@ all: clean $(TARGET) $(PROJECT).hex $(PROJECT).lss
 	@echo ""
 
 
-DrvEXINT.o : ./Drivers/Sources/DrvEXINT.c
-	$(CC) $(INCLUDES) $(GENDFLAGS) $(CFLAGS) -c ./Drivers/Sources/DrvEXINT.c
 DrvUSART.o : ./Drivers/Sources/DrvUSART.c
 	$(CC) $(INCLUDES) $(GENDFLAGS) $(CFLAGS) -c ./Drivers/Sources/DrvUSART.c
-DrvMISC.o : ./Drivers/Sources/DrvMISC.c
-	$(CC) $(INCLUDES) $(GENDFLAGS) $(CFLAGS) -c ./Drivers/Sources/DrvMISC.c
 DrvSYS.o : ./Drivers/Sources/DrvSYS.c
 	$(CC) $(INCLUDES) $(GENDFLAGS) $(CFLAGS) -c ./Drivers/Sources/DrvSYS.c
+DrvWDT.o : ./Drivers/Sources/DrvWDT.c
+	$(CC) $(INCLUDES) $(GENDFLAGS) $(CFLAGS) -c ./Drivers/Sources/DrvWDT.c
 DrvADC.o : ./Drivers/Sources/DrvADC.c
 	$(CC) $(INCLUDES) $(GENDFLAGS) $(CFLAGS) -c ./Drivers/Sources/DrvADC.c
 DrvSPI.o : ./Drivers/Sources/DrvSPI.c
 	$(CC) $(INCLUDES) $(GENDFLAGS) $(CFLAGS) -c ./Drivers/Sources/DrvSPI.c
 DrvTWI.o : ./Drivers/Sources/DrvTWI.c
 	$(CC) $(INCLUDES) $(GENDFLAGS) $(CFLAGS) -c ./Drivers/Sources/DrvTWI.c
-DrvPWR.o : ./Drivers/Sources/DrvPWR.c
-	$(CC) $(INCLUDES) $(GENDFLAGS) $(CFLAGS) -c ./Drivers/Sources/DrvPWR.c
-DrvWDT.o : ./Drivers/Sources/DrvWDT.c
-	$(CC) $(INCLUDES) $(GENDFLAGS) $(CFLAGS) -c ./Drivers/Sources/DrvWDT.c
 HlDrvRFM23.o : ./Drivers/Sources/HlDrvRFM23.c
 	$(CC) $(INCLUDES) $(GENDFLAGS) $(CFLAGS) -c ./Drivers/Sources/HlDrvRFM23.c
 HlDrvVL53L0X.o : ./Drivers/Sources/HlDrvRFM23.c
 	$(CC) $(INCLUDES) $(GENDFLAGS) $(CFLAGS) -c ./Drivers/Sources/HlDrvVL53L0X.c
-isr_auto.o : ./isr_auto.c
-	$(CC) $(INCLUDES) $(GENDFLAGS) $(CFLAGS) -c ./isr_auto.c
 main.o : ./main.c
 	$(CC) $(INCLUDES) $(GENDFLAGS) $(CFLAGS) -c ./main.c
-millis.o: ./Drivers/Sources/millis.c
-	$(CC) $(INCLUDES) $(GENDFLAGS) $(CFLAGS) -c ./Drivers/Sources/millis.c
 
 start.o : ./Drivers/Sources/start.s
 	$(CC) $(INCLUDES) $(GENDFLAGS) $(CFLAGS) -x assembler-with-cpp -c ./Drivers/Sources/start.s
